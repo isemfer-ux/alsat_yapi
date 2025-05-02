@@ -1,71 +1,27 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satış Listesi</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-        .container {
-            width: 90%;
-            margin: 20px auto;
-        }
-        h1 {
-            text-align: center;
-            color: #007bff;
-        }
-        .item {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            background-color: white;
-        }
-        .item h2 {
-            margin-top: 0;
-        }
-        .item p {
-            margin: 5px 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Satış Listesi</title>
 </head>
 <body>
+  <h1>Satış Listesi</h1>
+  <ul id="liste"></ul>
 
-    <div class="container">
-        <h1>Satış Listesi</h1>
-        <div id="content"></div>
-    </div>
-
-    <script>
-        fetch("https://api.github.com/repos/isemfer/alsat_yapi/contents/satis_listesi.json")
-            .then(response => response.json())
-            .then(data => {
-                // Base64 kodlu veriyi çözme
-                let decodedContent = atob(data.content);
-                let parsedData = JSON.parse(decodedContent);
-
-                // Veriyi HTML sayfasında gösterme
-                let contentDiv = document.getElementById('content');
-                parsedData.forEach(item => {
-                    let itemDiv = document.createElement('div');
-                    itemDiv.classList.add('item');
-                    itemDiv.innerHTML = `
-                        <h2>${item.tip} - ${item.konum}</h2>
-                        <p><strong>Fiyat:</strong> ${item.fiyat} TL</p>
-                        <p><strong>Özellikler:</strong> ${item.ozellikler.join(', ')}</p>
-                        <p><strong>Durum:</strong> ${item.durum}</p>
-                    `;
-                    contentDiv.appendChild(itemDiv);
-                });
-            })
-            .catch(error => console.error('Hata:', error));
-    </script>
-
+  <script>
+    fetch('https://raw.githubusercontent.com/isemfer-ux/alsat_yapi/main/satis_listesi.json')
+      .then(response => response.json())
+      .then(data => {
+        const liste = document.getElementById('liste');
+        data.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = `${item.id} - ${item.tip} - ${item.il}`;
+          liste.appendChild(li);
+        });
+      })
+      .catch(error => {
+        console.error("Hata oluştu:", error);
+      });
+  </script>
 </body>
 </html>
