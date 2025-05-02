@@ -6,8 +6,8 @@
   <title>Satış Listesi</title>
   <style>
     body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f2f2f2;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
       margin: 0;
       padding: 1rem;
     }
@@ -16,18 +16,31 @@
       margin-bottom: 1rem;
     }
     .item {
-      background: white;
-      padding: 1rem;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       margin-bottom: 1rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
     }
-    .item h2 {
-      margin: 0 0 0.5rem 0;
+    .item-header {
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+    .item-header h2 {
+      margin: 0;
       font-size: 1.1rem;
     }
-    .item p {
-      margin: 0.3rem 0;
+    .item-details {
+      padding: 1rem;
+      display: none;
+    }
+    .item.open .item-details {
+      display: block;
+    }
+    .item-details p {
+      margin: 0.4rem 0;
       font-size: 0.95rem;
     }
     @media (min-width: 600px) {
@@ -51,17 +64,31 @@
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'item';
+
           div.innerHTML = `
-            <h2>${item.tip} - ${item.il} / ${item.ilce}</h2>
-            <p><strong>Fiyat:</strong> ${item.sfiyat} TL</p>
-            <p><strong>Durum:</strong> ${item.durum}</p>
-            <p><strong>Özellikler:</strong> ${item.ozellikler.join(', ')}</p>
+            <div class="item-header">
+              <h2>${item.tip} - ${item.il} / ${item.ilce}</h2>
+              <p><strong>Fiyat:</strong> ${item.fiyat} TL</p>
+            </div>
+            <div class="item-details">
+              <p><strong>Durum:</strong> ${item.durum}</p>
+              <p><strong>Adres:</strong> ${item.adres || 'Bilinmiyor'}</p>
+              <p><strong>Özellikler:</strong> ${item.ozellikler?.join(', ') || 'Yok'}</p>
+              <p><strong>Açıklama:</strong> ${item.aciklama || 'Yok'}</p>
+              <p><strong>İlan Kodu:</strong> ${item.id}</p>
+            </div>
           `;
+
+          // Tıklanınca aç/kapa işlemi
+          div.addEventListener('click', () => {
+            div.classList.toggle('open');
+          });
+
           liste.appendChild(div);
         });
       })
       .catch(err => {
-        document.getElementById('liste').innerHTML = "Veriler yüklenemedi.";
+        document.getElementById('liste').innerText = "Veriler alınamadı.";
         console.error("Veri çekme hatası:", err);
       });
   </script>
