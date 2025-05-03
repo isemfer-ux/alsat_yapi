@@ -2,93 +2,111 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satış Listesi</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 1rem;
-      margin: 0;
-      background-color: #f4f4f4;
-    }
-    input#arama {
-      width: 100%;
-      padding: 12px;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-      box-sizing: border-box;
+    body { font-family: Arial, sans-serif; padding: 1rem; margin: 0; background: #f7f7f7; }
+    h1 { text-align: center; }
+    input[type="text"] {
+      width: 100%; padding: 10px; margin-bottom: 1rem; font-size: 16px;
+      border: 1px solid #ccc; border-radius: 5px;
     }
     .item {
-      background: #fff;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-left: 5px solid #007bff;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      background: #fff; margin-bottom: 1rem; padding: 1rem; border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .title {
-      font-weight: bold;
-      font-size: 1.2rem;
-      margin-bottom: 0.5rem;
+    .item-header { display: flex; justify-content: space-between; flex-wrap: wrap; }
+    .item-details { display: none; margin-top: 1rem; font-size: 14px; }
+    .toggle-btn {
+      background: #007BFF; color: #fff; border: none; padding: 6px 12px;
+      cursor: pointer; border-radius: 4px; font-size: 14px;
     }
   </style>
 </head>
 <body>
+  <h1>Satış Listesi</h1>
+  <input type="text" id="searchInput" placeholder="Ara (örn: Bursa daire 3+1)" />
 
-  <input type="text" id="arama" placeholder="Aramak için yazın...">
-
-  <div id="liste">Yükleniyor...</div>
+  <div id="listContainer">Yükleniyor...</div>
 
   <script>
-    const aramaKutusu = document.getElementById('arama');
-    const listeDiv = document.getElementById('liste');
-    const urlParams = new URLSearchParams(window.location.search);
-    const aranan = urlParams.get('arama');
+    const container = document.getElementById('listContainer');
+    const searchInput = document.getElementById('searchInput');
 
-    let veriler = [];
+    const getQueryParam = (param) => {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param) || "";
+    }
 
-    // Listeleme fonksiyonu
-    function listele(data) {
-      listeDiv.innerHTML = '';
-      data.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item';
+    async function fetchData() {
+      const res = await fetch('https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json');
+      const data = await res.json();
+      const content = atob(data.content);
+      return JSON.parse(content);
+    }
+
+    function matchesSearch(item, term) {
+      const flat = [
+        item.id, item.tip, item.il, item.ilce, item.mahalle,
+        item.satkir, item.durum, item.aciklama,
+        ...(item.ozellikler || [])
+      ].join(' ').toLowerCase();
+      return flat.includes(term.toLowerCase());
+    }
+
+    function renderList(data, filter = "") {
+      container.innerHTML = "";
+      const filtered = data.filter(item => matchesSearch(item, filter));
+      if (filtered.length === 0) {
+        container.innerHTML = "<p>Eşleşen sonuç bulunamadı.</p>";
+        return;
+      }
+
+      filtered.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "item";
         div.innerHTML = `
-          <div class="title">${item.baslik || 'Başlıksız'}</div>
-          <div>Tür: ${item.tur || '-'}</div>
-          <div>Fiyat: ${item.fiyat || '-'}</div>
-          <div>Detay: ${item.detay || '-'}</div>
+          <div class="item-header">
+            <div>
+              <strong>${item.tip}</strong> - ${item.il} / ${item.ilce}
+              <br/><small>${item.satkir} - ${item.durum}</small>
+            </div>
+            <div>
+              <strong>${item.sfiyat} ₺</strong>
+              <br/>
+              <button class="toggle-btn">Detay</button>
+            </div>
+          </div>
+          <div class="item-details">
+            <p><strong>Mahalle:</strong> ${item.mahalle}</p>
+            <p><strong>Blok:</strong> ${item.blok} - <strong>Kat:</strong> ${item.kat} - <strong>Daire:</strong> ${item.daire}</p>
+            <p><strong>Net/Brüt m²:</strong> ${item.m2net} / ${item.m2brut}</p>
+            <p><strong>Kira Fiyatı:</strong> ${item.kfiyat} ₺</p>
+            <p><strong>Sahibi:</strong> ${item.sahibi}</p>
+            <p><strong>Özellikler:</strong> ${item.ozellikler?.join(', ')}</p>
+            <p><strong>Açıklama:</strong> ${item.aciklama}</p>
+          </div>
         `;
-        listeDiv.appendChild(div);
+        const btn = div.querySelector(".toggle-btn");
+        const details = div.querySelector(".item-details");
+        btn.onclick = () => {
+          details.style.display = (details.style.display === "none" || !details.style.display) ? "block" : "none";
+          btn.textContent = details.style.display === "block" ? "Gizle" : "Detay";
+        };
+        container.appendChild(div);
       });
     }
 
-    // Filtreleme fonksiyonu
-    function filtreleListe(kelime) {
-      const filtreli = veriler.filter(item => {
-        const tumText = JSON.stringify(item).toLowerCase();
-        return tumText.includes(kelime.toLowerCase());
-      });
-      listele(filtreli);
-    }
-
-    // JSON verisini çek
-    fetch('https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json')
-      .then(res => res.json())
-      .then(data => {
-        const icerik = atob(data.content);
-        veriler = JSON.parse(icerik);
-        if (aranan) {
-          aramaKutusu.value = aranan;
-          filtreleListe(aranan);
-        } else {
-          listele(veriler);
-        }
-      });
-
-    // Anlık arama takibi
-    aramaKutusu.addEventListener('input', e => {
-      filtreleListe(e.target.value);
+    searchInput.addEventListener("input", () => {
+      renderList(window.salesData, searchInput.value);
     });
+
+    window.onload = async () => {
+      searchInput.value = getQueryParam("arama") || "";
+      const data = await fetchData();
+      window.salesData = data;
+      renderList(data, searchInput.value);
+    };
   </script>
 </body>
 </html>
