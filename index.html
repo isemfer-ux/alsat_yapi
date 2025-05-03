@@ -7,8 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .filter-btn {
-      @apply px-3 py-1 rounded-full font-medium text-sm backdrop-blur shadow border transition-all;
-      opacity: 0.8;
+      background-color: rgba(0, 123, 255, 0.8); /* Hafif şeffaf mavi */
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px; /* Köşeleri yumuşatır */
+      cursor: pointer;
+      transition: background-color 0.3s ease; /* Efekt için geçiş */
     }
 
     .group-satkir {
@@ -75,118 +80,137 @@
   <div id="listContainer" class="p-4 space-y-4"></div>
 
   <script>
-    const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
-    const filters = {};
+  const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
+  const filters = {};
 
-    function normalize(str) {
-      return str
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/ç/g, "c")
-        .replace(/ğ/g, "g")
-        .replace(/ı/g, "i")
-        .replace(/ö/g, "o")
-        .replace(/ş/g, "s")
-        .replace(/ü/g, "u");
-    }
+  function normalize(str) {
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/ç/g, "c")
+      .replace(/ğ/g, "g")
+      .replace(/ı/g, "i")
+      .replace(/ö/g, "o")
+      .replace(/ş/g, "s")
+      .replace(/ü/g, "u");
+  }
 
-    function formatNumber(n) {
-      return parseInt(n).toLocaleString("tr-TR");
-    }
+  function formatNumber(n) {
+    return parseInt(n).toLocaleString("tr-TR");
+  }
 
-    function renderList(data) {
-      const container = document.getElementById("listContainer");
-      const query = normalize(document.getElementById("searchInput").value);
-      const terms = query.split(" ").filter(Boolean);
+  function renderList(data) {
+    const container = document.getElementById("listContainer");
+    const query = normalize(document.getElementById("searchInput").value);
+    const terms = query.split(" ").filter(Boolean);
 
-      const filtered = data.filter(item => {
-        const haystack = normalize(Object.values(item).join(" "));
-        const searchMatch = terms.every(term => haystack.includes(term));
+    const filtered = data.filter(item => {
+      const haystack = normalize(Object.values(item).join(" "));
+      const searchMatch = terms.every(term => haystack.includes(term));
 
-        const groupMatch = Object.keys(filters).every(group => {
-          return !filters[group] || filters[group].length === 0 || filters[group].includes(item[group]);
-        });
-
-        return searchMatch && groupMatch;
+      const groupMatch = Object.keys(filters).every(group => {
+        return !filters[group] || filters[group].length === 0 || filters[group].includes(item[group]);
       });
 
-      container.innerHTML = "";
+      return searchMatch && groupMatch;
+    });
 
-      filtered.forEach(item => {
-        const box = document.createElement("div");
-        box.className = "bg-white rounded shadow p-4 space-y-2";
+    container.innerHTML = "";
 
-        const title = `${item.satkir} ${item.tip} - ${item.ilce} - ${item.m2net} m²`;
-        const fiyat = `${formatNumber(item.sfiyat)} ₺`;
+    filtered.forEach(item => {
+      const box = document.createElement("div");
+      box.className = "bg-white rounded shadow p-4 space-y-2";
 
-        box.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div class="font-bold">${title}</div>
-            <div class="text-green-600 font-semibold">${fiyat}</div>
-          </div>
-          <button class="text-blue-500 underline text-sm toggle-details">Detay Göster</button>
-          <div class="details hidden text-sm mt-2 space-y-1">
-            ${item.aciklama ? `<div><strong>Açıklama:</strong> ${item.aciklama}</div>` : ""}
-            ${item.ozellikler?.length ? `<div><strong>Özellikler:</strong> ${item.ozellikler.join(", ")}</div>` : ""}
-            ${item.mahalle ? `<div><strong>Adres:</strong> ${item.il}, ${item.ilce}, ${item.mahalle}</div>` : ""}
-            ${item.kat ? `<div><strong>Kat:</strong> ${item.kat} - Daire No: ${item.daire}</div>` : ""}
-            <div><strong>Net/Brüt:</strong> ${item.m2net} / ${item.m2brut} m²</div>
-            <div><strong>Durum:</strong> ${item.durum}</div>
-          </div>
-        `;
-        container.appendChild(box);
-      });
+      const title = `${item.satkir} ${item.tip} - ${item.ilce} - ${item.m2net} m²`;
+      const fiyat = `${formatNumber(item.sfiyat)} ₺`;
 
-      document.querySelectorAll(".toggle-details").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const details = btn.nextElementSibling;
-          details.classList.toggle("hidden");
-          btn.textContent = details.classList.contains("hidden") ? "Detay Göster" : "Detay Gizle";
-        });
-      });
+      box.innerHTML = `
+        <div class="flex justify-between items-center">
+          <div class="font-bold">${title}</div>
+          <div class="text-green-600 font-semibold">${fiyat}</div>
+        </div>
+        <button class="text-blue-500 underline text-sm toggle-details">Detay Göster</button>
+        <div class="details hidden text-sm mt-2 space-y-1">
+          ${item.aciklama ? `<div><strong>Açıklama:</strong> ${item.aciklama}</div>` : ""}
+          ${item.ozellikler?.length ? `<div><strong>Özellikler:</strong> ${item.ozellikler.join(", ")}</div>` : ""}
+          ${item.mahalle ? `<div><strong>Adres:</strong> ${item.il}, ${item.ilce}, ${item.mahalle}</div>` : ""}
+          ${item.kat ? `<div><strong>Kat:</strong> ${item.kat} - Daire No: ${item.daire}</div>` : ""}
+          <div><strong>Net/Brüt:</strong> ${item.m2net} / ${item.m2brut} m²</div>
+          <div><strong>Durum:</strong> ${item.durum}</div>
+        </div>
+      `;
+      container.appendChild(box);
+    });
 
-      document.getElementById("resultCount").textContent = `${filtered.length} ürün bulundu`;
-    }
-
-    // Arama
-    document.getElementById("searchInput").addEventListener("input", () => renderList(window.rawData));
-
-    // Butonlar
-    document.querySelectorAll(".filter-btn").forEach(btn => {
+    document.querySelectorAll(".toggle-details").forEach(btn => {
       btn.addEventListener("click", () => {
-        const group = btn.dataset.group;
-        const value = btn.dataset.value;
-        filters[group] = filters[group] || [];
-
-        if (filters[group].includes(value)) {
-          filters[group] = filters[group].filter(v => v !== value);
-          btn.classList.remove("active");
-        } else {
-          filters[group].push(value);
-          btn.classList.add("active");
-        }
-        renderList(window.rawData);
+        const details = btn.nextElementSibling;
+        details.classList.toggle("hidden");
+        btn.textContent = details.classList.contains("hidden") ? "Detay Göster" : "Detay Gizle";
       });
     });
 
-    function initFromURL() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const q = urlParams.get("arama");
-      if (q) {
-        document.getElementById("searchInput").value = q;
+    document.getElementById("resultCount").textContent = `${filtered.length} ürün bulundu`;
+  }
+
+  // Arama
+  document.getElementById("searchInput").addEventListener("input", () => {
+    if (window.rawData) { // rawData'nın yüklendiğinden emin ol
+      renderList(window.rawData);
+    }
+  });
+
+  // Butonlar (Filtreleme)
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const group = btn.dataset.group;
+      const value = btn.dataset.value;
+      filters[group] = filters[group] || [];
+
+      if (filters[group].includes(value)) {
+        filters[group] = filters[group].filter(v => v !== value);
+        btn.classList.remove("active");
+      } else {
+        filters[group].push(value);
+        btn.classList.add("active");
+      }
+      if (window.rawData) { // rawData'nın yüklendiğinden emin ol
+        renderList(window.rawData);
+      }
+    });
+  });
+
+  function initFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const q = urlParams.get("arama");
+    if (q) {
+      document.getElementById("searchInput").value = q;
+      if (window.rawData) { // rawData yüklendiyse aramayı başlat
+        renderList(window.rawData);
       }
     }
+  }
 
-    // Başlat
-    fetch(apiUrl)
-      .then(res => res.json())
-      .then(data => {
-        const json = JSON.parse(atob(data.content));
+  // Başlat
+  fetch(apiUrl)
+    .then(res => res.json())
+    .then(data => {
+      try {
+        const jsonString = atob(data.content);
+        const json = JSON.parse(jsonString);
         window.rawData = json;
         initFromURL();
         renderList(json);
-      });
-  </script>
+      } catch (e) {
+        console.error("JSON ayrıştırma hatası:", e);
+        document.getElementById("listContainer").innerHTML = "<div class='text-red-500'>Veri yüklenirken bir hata oluştu.</div>";
+      }
+    })
+    .catch(error => {
+      console.error("Veri çekme hatası:", error);
+      document.getElementById("listContainer").innerHTML = "<div class='text-red-500'>Veri yüklenirken bir hata oluştu.</div>";
+    });
+ </script>
 </body>
 </html>
