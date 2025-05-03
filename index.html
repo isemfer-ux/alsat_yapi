@@ -45,8 +45,9 @@
       transition: background-color 0.3s ease;
     }
 
-    .filter-button:hover {
-      background-color: #ccc;
+    .filter-button.active {
+      background-color: #007bff;
+      color: white;
     }
 
     .card {
@@ -102,7 +103,8 @@
     const searchInput = document.getElementById("searchInput");
     const listContainer = document.getElementById("listContainer");
 
-    const filterButtons = ["SATILIK", "KİRALIK", "DAİRE", "DÜKKAN", "AKÇALAR", "NİLÜFER"];
+    const filterLabels = ["SATILIK", "KİRALIK", "DAİRE", "DÜKKAN", "AKÇALAR", "NİLÜFER"];
+    let activeFilters = [];
 
     function formatNumber(numStr) {
       const num = Number(numStr);
@@ -111,9 +113,13 @@
 
     async function fetchData() {
       const res = await fetch(jsonUrl);
-      const data = await res.json();
-      const content = atob(data.content);
-      return JSON.parse(content);
+      const { content, encoding } = await res.json();
+
+      // UTF-8 decode
+      const byteArray = Uint8Array.from(atob(content), c => c.charCodeAt(0));
+      const decoded = new TextDecoder("utf-8").decode(byteArray);
+
+      return JSON.parse(decoded);
     }
 
     function highlightText(text, keywords) {
@@ -129,9 +135,11 @@
       listContainer.innerHTML = "";
       const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
 
+      const allTerms = [...keywords, ...activeFilters.map(f => f.toLowerCase())];
+
       const filtered = data.filter(item => {
         const values = Object.values(item).flat().join(" ").toLowerCase();
-        return keywords.every(k => values.includes(k));
+        return allTerms.every(k => values.includes(k));
       });
 
       if (filtered.length === 0) {
@@ -140,7 +148,7 @@
       }
 
       filtered.forEach(item => {
-        const { id, tip, il, ilce, mahalle, ada_parsel, blok, kat, daire, m2net, m2brut, satkir, sfiyat, kfiyat, sahibi, ozellikler, aciklama, durum } = item;
+        const { tip, il, ilce, mahalle, ada_parsel, blok, kat, daire, m2net, m2brut, satkir, sfiyat, kfiyat, sahibi, ozellikler, aciklama, durum } = item;
 
         const title = `${satkir} ${tip} - ${il}/${ilce} - ${mahalle}`;
         const subtitle = `${blok || ""} Blok ${daire || ""} (${kat || ""})`;
@@ -149,8 +157,8 @@
         card.className = "card";
 
         card.innerHTML = `
-          <h3>${highlightText(title, keywords)}</h3>
-          <div>${highlightText(subtitle, keywords)}</div>
+          <h3>${highlightText(title, allTerms)}</h3>
+          <div>${highlightText(subtitle, allTerms)}</div>
           <button class="toggle-details">Detay Göster</button>
           <div class="details">
             ${ada_parsel ? `<div><b>Ada/Parsel:</b> ${ada_parsel}</div>` : ""}
@@ -179,17 +187,20 @@
     function renderFilterButtons() {
       const container = document.getElementById("filterButtons");
       container.innerHTML = "";
-      filterButtons.forEach(label => {
+      filterLabels.forEach(label => {
         const btn = document.createElement("button");
         btn.textContent = label;
         btn.className = "filter-button";
         btn.onclick = () => {
-          const terms = searchInput.value.trim().toLowerCase().split(/\s+/);
-          if (!terms.includes(label.toLowerCase())) {
-            terms.push(label.toLowerCase());
-            searchInput.value = terms.join(" ");
-            renderList(window.salesData, searchInput.value);
+          const index = activeFilters.indexOf(label);
+          if (index === -1) {
+            activeFilters.push(label);
+            btn.classList.add("active");
+          } else {
+            activeFilters.splice(index, 1);
+            btn.classList.remove("active");
           }
+          renderList(window.salesData, searchInput.value);
         };
         container.appendChild(btn);
       });
