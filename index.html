@@ -29,84 +29,109 @@
 
   <div id="listContainer">Yükleniyor...</div>
 
-  <script>
-    const container = document.getElementById('listContainer');
-    const searchInput = document.getElementById('searchInput');
+<script>
+  const container = document.getElementById('listContainer');
+  const searchInput = document.getElementById('searchInput');
 
-    const getQueryParam = (param) => {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param) || "";
+  const getQueryParam = (param) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param) || "";
+  }
+
+  // UTF-8 destekli base64 çözümleme
+  function decodeBase64Utf8(base64) {
+    return decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+  }
+
+  async function fetchData() {
+    const res = await fetch('https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json');
+    const data = await res.json();
+    const content = decodeBase64Utf8(data.content);
+    return JSON.parse(content);
+  }
+
+  function formatPrice(value) {
+    const num = parseFloat(value);
+    return isNaN(num) ? value : num.toLocaleString('tr-TR');
+  }
+
+  function normalize(str) {
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Türkçe karakterleri normalize et
+      .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+      .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c');
+  }
+
+  function matchesSearch(item, term) {
+    const flat = [
+      item.id, item.tip, item.il, item.ilce, item.mahalle,
+      item.satkir, item.durum, item.aciklama,
+      ...(item.ozellikler || [])
+    ].join(' ').toLowerCase();
+    return normalize(flat).includes(normalize(term));
+  }
+
+  function renderList(data, filter = "") {
+    container.innerHTML = "";
+    const filtered = data.filter(item => matchesSearch(item, filter));
+    if (filtered.length === 0) {
+      container.innerHTML = "<p>Eşleşen sonuç bulunamadı.</p>";
+      return;
     }
 
-    async function fetchData() {
-      const res = await fetch('https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json');
-      const data = await res.json();
-      const content = atob(data.content);
-      return JSON.parse(content);
-    }
-
-    function matchesSearch(item, term) {
-      const flat = [
-        item.id, item.tip, item.il, item.ilce, item.mahalle,
-        item.satkir, item.durum, item.aciklama,
-        ...(item.ozellikler || [])
-      ].join(' ').toLowerCase();
-      return flat.includes(term.toLowerCase());
-    }
-
-    function renderList(data, filter = "") {
-      container.innerHTML = "";
-      const filtered = data.filter(item => matchesSearch(item, filter));
-      if (filtered.length === 0) {
-        container.innerHTML = "<p>Eşleşen sonuç bulunamadı.</p>";
-        return;
-      }
-
-      filtered.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-          <div class="item-header">
-            <div>
-              <strong>${item.tip}</strong> - ${item.il} / ${item.ilce}
-              <br/><small>${item.satkir} - ${item.durum}</small>
-            </div>
-            <div>
-              <strong>${item.sfiyat} ₺</strong>
-              <br/>
-              <button class="toggle-btn">Detay</button>
-            </div>
+    filtered.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <div class="item-header">
+          <div>
+            <strong>${item.tip}</strong> - ${item.il} / ${item.ilce}
+            <br/><small>${item.satkir} - ${item.durum}</small>
           </div>
-          <div class="item-details">
-            <p><strong>Mahalle:</strong> ${item.mahalle}</p>
-            <p><strong>Blok:</strong> ${item.blok} - <strong>Kat:</strong> ${item.kat} - <strong>Daire:</strong> ${item.daire}</p>
-            <p><strong>Net/Brüt m²:</strong> ${item.m2net} / ${item.m2brut}</p>
-            <p><strong>Kira Fiyatı:</strong> ${item.kfiyat} ₺</p>
-            <p><strong>Sahibi:</strong> ${item.sahibi}</p>
-            <p><strong>Özellikler:</strong> ${item.ozellikler?.join(', ')}</p>
-            <p><strong>Açıklama:</strong> ${item.aciklama}</p>
+          <div>
+            <strong>${formatPrice(item.sfiyat)} ₺</strong>
+            <br/>
+            <button class="toggle-btn">Detay</button>
           </div>
-        `;
-        const btn = div.querySelector(".toggle-btn");
-        const details = div.querySelector(".item-details");
-        btn.onclick = () => {
-          details.style.display = (details.style.display === "none" || !details.style.display) ? "block" : "none";
-          btn.textContent = details.style.display === "block" ? "Gizle" : "Detay";
-        };
-        container.appendChild(div);
-      });
-    }
-
-    searchInput.addEventListener("input", () => {
-      renderList(window.salesData, searchInput.value);
+        </div>
+        <div class="item-details">
+          <p><strong>Mahalle:</strong> ${item.mahalle}</p>
+          <p><strong>Blok:</strong> ${item.blok} - <strong>Kat:</strong> ${item.kat} - <strong>Daire:</strong> ${item.daire}</p>
+          <p><strong>Net/Brüt m²:</strong> ${item.m2net} / ${item.m2brut}</p>
+          <p><strong>Kira Fiyatı:</strong> ${formatPrice(item.kfiyat)} ₺</p>
+          <p><strong>Sahibi:</strong> ${item.sahibi}</p>
+          <p><strong>Özellikler:</strong> ${item.ozellikler?.join(', ')}</p>
+          <p><strong>Açıklama:</strong> ${item.aciklama}</p>
+        </div>
+      `;
+      const btn = div.querySelector(".toggle-btn");
+      const details = div.querySelector(".item-details");
+      btn.onclick = () => {
+        details.style.display = (details.style.display === "none" || !details.style.display) ? "block" : "none";
+        btn.textContent = details.style.display === "block" ? "Gizle" : "Detay";
+      };
+      container.appendChild(div);
     });
+  }
 
-    window.onload = async () => {
-      searchInput.value = getQueryParam("arama") || "";
-      const data = await fetchData();
-      window.salesData = data;
-      renderList(data, searchInput.value);
-    };
-  </script>
+  searchInput.addEventListener("input", () => {
+    renderList(window.salesData, searchInput.value);
+  });
+
+  window.onload = async () => {
+    searchInput.value = getQueryParam("arama") || "";
+    const data = await fetchData();
+    window.salesData = data;
+    renderList(data, searchInput.value);
+  };
+</script>
+
 </body>
 </html>
