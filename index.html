@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Satış Listesi</title>
   <style>
     body {
@@ -24,21 +24,11 @@
       margin-bottom: 1rem;
       border-left: 5px solid #007bff;
       box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      cursor: pointer;
     }
     .title {
       font-weight: bold;
       font-size: 1.2rem;
       margin-bottom: 0.5rem;
-    }
-    .detay {
-      display: none;
-      margin-top: 0.5rem;
-      color: #555;
-    }
-    .fiyat {
-      font-weight: bold;
-      color: #d32f2f;
     }
   </style>
 </head>
@@ -56,27 +46,23 @@
 
     let veriler = [];
 
+    // Listeleme fonksiyonu
     function listele(data) {
       listeDiv.innerHTML = '';
-      data.forEach((item, index) => {
+      data.forEach(item => {
         const div = document.createElement('div');
         div.className = 'item';
         div.innerHTML = `
           <div class="title">${item.baslik || 'Başlıksız'}</div>
-          <div class="fiyat">${item.fiyat || '-'}</div>
-          <div class="detay" id="detay-${index}">
-            <div><strong>Tür:</strong> ${item.tur || '-'}</div>
-            <div><strong>Detay:</strong> ${item.detay || '-'}</div>
-          </div>
+          <div>Tür: ${item.tur || '-'}</div>
+          <div>Fiyat: ${item.fiyat || '-'}</div>
+          <div>Detay: ${item.detay || '-'}</div>
         `;
-        div.addEventListener('click', () => {
-          const detay = document.getElementById(`detay-${index}`);
-          detay.style.display = detay.style.display === 'none' ? 'block' : 'none';
-        });
         listeDiv.appendChild(div);
       });
     }
 
+    // Filtreleme fonksiyonu
     function filtreleListe(kelime) {
       const filtreli = veriler.filter(item => {
         const tumText = JSON.stringify(item).toLowerCase();
@@ -85,6 +71,7 @@
       listele(filtreli);
     }
 
+    // JSON verisini çek
     fetch('https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json')
       .then(res => res.json())
       .then(data => {
@@ -98,6 +85,7 @@
         }
       });
 
+    // Anlık arama takibi
     aramaKutusu.addEventListener('input', e => {
       filtreleListe(e.target.value);
     });
