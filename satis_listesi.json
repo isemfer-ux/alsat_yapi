@@ -16,7 +16,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "site içi"],
-	"aciklama": "191/3 F1",
+	"aciklama": "SATILIK 191/3 F1 SİTE İÇİ 3+1 ZEMİN KAT DAİRE",
 	"durum": ""
   },
   {
@@ -36,7 +36,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "site içi"],
-	"aciklama": "191/3 F2",
+	"aciklama": "SATILIK 191/3 F2 SİTE İÇİ 3+1 ZEMİN KAT DAİRE",
 	"durum": ""
   },
   {
@@ -56,7 +56,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "bahçeli", "site içi"],
-	"aciklama": "191/3 G1",
+	"aciklama": "SATILIK 191/3 G1 SİTE İÇİ 3+1 ZEMİN KAT DAİRE",
 	"durum": "OPSİYONLU"
   },
   {
@@ -76,7 +76,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "site içi"],
-	"aciklama": "191/3 G2",
+	"aciklama": "SATILIK 191/3 G2 SİTE İÇİ 3+1 ZEMİN KAT DAİRE",
 	"durum": ""
   },
   {
@@ -96,7 +96,87 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "batı"],
-	"aciklama": "191/3 H1",
+	"aciklama": "AKÇALAR SATILIK 191/3 H1 SİTE İÇİ 3+1 ZEMİN KAT DAİRE BATI",
 	"durum": ""
   }
+  {
+	"id": "A0006",
+	"tip": "DAİRE",
+	"il": "BURSA",
+	"ilce": "NİLÜFER",
+	"mahalle": "AKCALAR",
+	"ada_parsel": "191/3",
+	"blok": "G",
+	"kat": "4",
+	"daire": "10",
+	"m2net": "140",
+	"m2brut": "165",
+	"satkir": "SATILIK",
+	"sfiyat": "5300000",
+	"kfiyat": "",
+	"sahibi": "CAN ALSAT",
+	"ozellikler": ["3+1", "asansör", "otopark", "4. kat", "KUZEY BATI"],
+	"aciklama": "AKÇALAR SATILIK 191/3 G10 SİTE İÇİ 3+1 4.KAT DAİRE KUZEYBATI",
+	"durum": ""
+  }
+  {
+	"id": "A0007",
+	"tip": "DAİRE",
+	"il": "BURSA",
+	"ilce": "NİLÜFER",
+	"mahalle": "AKCALAR",
+	"ada_parsel": "191/3",
+	"blok": "B",
+	"kat": "1",
+	"daire": "2",
+	"m2net": "140",
+	"m2brut": "165",
+	"satkir": "SATILIK",
+	"sfiyat": "5100000",
+	"kfiyat": "",
+	"sahibi": "CAN ALSAT",
+	"ozellikler": ["3+1", "asansör", "otopark", "1. kat", "KUZEY BATI"],
+	"aciklama": "AKÇALAR SATILIK 191/3 B2 YOL 3+1 1.KAT DAİRE KUZEY",
+	"durum": ""
+  }
+  {
+	"id": "A0008",
+	"tip": "DAİRE",
+	"il": "BURSA",
+	"ilce": "NİLÜFER",
+	"mahalle": "KAYAPA",
+	"ada_parsel": "",
+	"blok": "",
+	"kat": "3",
+	"daire": "",
+	"m2net": "140",
+	"m2brut": "",
+	"satkir": "SATILIK",
+	"sfiyat": "5000000",
+	"kfiyat": "",
+	"sahibi": "UFUK ALIM",
+	"ozellikler": ["3+1", "asansör", "otopark", "3. kat"],
+	"aciklama": "KAYAPA SATILIK 3+1 3.KAT DAİRE",
+	"durum": ""
+  }	
+  {
+	"id": "A0009",
+	"tip": "DÜKKAN",
+	"il": "BURSA",
+	"ilce": "NİLÜFER",
+	"mahalle": "AKÇALAR",
+	"ada_parsel": "191/3",
+	"blok": "A",
+	"kat": "ZEMİN",
+	"daire": "9",
+	"m2net": "131",
+	"m2brut": "155",
+	"satkir": "SATILIK/KİRALIK",
+	"sfiyat": "7750000",
+	"kfiyat": "50000",
+	"sahibi": "ALSAT YAPI",
+	"ozellikler": "",
+	"aciklama": "AKÇALAR SATILIK KİRALIK A BLOK DÜKKAN",
+	"durum": ""
+  }	
 ]
