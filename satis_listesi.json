@@ -175,7 +175,7 @@
 	"sfiyat": "7750000",
 	"kfiyat": "50000",
 	"sahibi": "ALSAT YAPI",
-	"ozellikler": "",
+	"ozellikler": ["ZEMİN", "asansör", "otopark"],
 	"aciklama": "AKÇALAR SATILIK KİRALIK A BLOK DÜKKAN",
 	"durum": ""
   }	
