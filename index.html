@@ -53,10 +53,10 @@
         const div = document.createElement('div');
         div.className = 'item';
         div.innerHTML = `
-          <div class="title">${item.baslik || 'Başlıksız'}</div>
-          <div>Tür: ${item.tur || '-'}</div>
-          <div>Fiyat: ${item.fiyat || '-'}</div>
-          <div>Detay: ${item.detay || '-'}</div>
+          <div class="title">${item.ozellikler || 'Başlıksız'}</div>
+          <div>Tür: ${item.tip || '-'}</div>
+          <div>Fiyat: ${item.sfiyat || '-'}</div>
+          <div>Detay: ${item.m2net || '-'}</div>
         `;
         listeDiv.appendChild(div);
       });
