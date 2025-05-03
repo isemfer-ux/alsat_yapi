@@ -5,137 +5,213 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satış Listesi</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 1rem; margin: 0; background: #f7f7f7; }
-    h1 { text-align: center; }
-    input[type="text"] {
-      width: 100%; padding: 10px; margin-bottom: 1rem; font-size: 16px;
-      border: 1px solid #ccc; border-radius: 5px;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f9f9f9;
     }
-    .item {
-      background: #fff; margin-bottom: 1rem; padding: 1rem; border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+      box-sizing: border-box;
     }
-    .item-header { display: flex; justify-content: space-between; flex-wrap: wrap; }
-    .item-details { display: none; margin-top: 1rem; font-size: 14px; }
-    .toggle-btn {
-      background: #007BFF; color: #fff; border: none; padding: 6px 12px;
-      cursor: pointer; border-radius: 4px; font-size: 14px;
+
+    #searchInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    #filterButtons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .filter-button {
+      background-color: #eee;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+
+    .filter-button:hover {
+      background-color: #ccc;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .details {
+      display: none;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .show-details {
+      display: block;
+    }
+
+    .toggle-details {
+      margin-top: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .highlight {
+      background-color: yellow;
     }
   </style>
 </head>
 <body>
-  <h1>Satış Listesi</h1>
-  <input type="text" id="searchInput" placeholder="Ara (örn: Kayapa daire 3+1)" />
+  <div class="container">
+    <input type="text" id="searchInput" placeholder="Arama yap..." />
+    <div id="filterButtons"></div>
+    <div id="listContainer"></div>
+  </div>
 
-  <div id="listContainer">Yükleniyor...</div>
+  <script>
+    const jsonUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
+    const searchInput = document.getElementById("searchInput");
+    const listContainer = document.getElementById("listContainer");
 
-<script>
-  const container = document.getElementById('listContainer');
-  const searchInput = document.getElementById('searchInput');
+    const filterButtons = ["SATILIK", "KİRALIK", "DAİRE", "DÜKKAN", "AKÇALAR", "NİLÜFER"];
 
-  const getQueryParam = (param) => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param) || "";
-  }
-
-  function decodeBase64Utf8(base64) {
-    return decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-  }
-
-  async function fetchData() {
-    const res = await fetch('https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json');
-    const data = await res.json();
-    const content = decodeBase64Utf8(data.content);
-    return JSON.parse(content);
-  }
-
-  function formatPrice(value) {
-    const num = parseFloat(value);
-    return isNaN(num) ? "" : num.toLocaleString('tr-TR');
-  }
-
-  function normalize(str) {
-    return str
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
-      .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c');
-  }
-
-  function matchesSearch(item, searchText) {
-    const words = normalize(searchText).split(/\s+/).filter(Boolean);
-    const flat = [
-      item.id, item.tip, item.il, item.ilce, item.mahalle,
-      item.blok, item.kat, item.daire,
-      item.satkir, item.durum, item.aciklama,
-      ...(item.ozellikler || [])
-    ].join(' ').toLowerCase();
-    const normalizedFlat = normalize(flat);
-
-    return words.every(word => normalizedFlat.includes(word));
-  }
-
-  function renderList(data, filter = "") {
-    container.innerHTML = "";
-    const filtered = data.filter(item => matchesSearch(item, filter));
-    if (filtered.length === 0) {
-      container.innerHTML = "<p>Eşleşen sonuç bulunamadı.</p>";
-      return;
+    function formatNumber(numStr) {
+      const num = Number(numStr);
+      return isNaN(num) ? "" : num.toLocaleString("tr-TR");
     }
 
-    filtered.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "item";
-      div.innerHTML = `
-        <div class="item-header">
-          <div>
-            <strong>${item.tip}</strong> - ${item.il} / ${item.ilce}
-            <br/><small>${item.satkir} - ${item.durum}</small>
+    async function fetchData() {
+      const res = await fetch(jsonUrl);
+      const data = await res.json();
+      const content = atob(data.content);
+      return JSON.parse(content);
+    }
+
+    function highlightText(text, keywords) {
+      let highlighted = text;
+      keywords.forEach(k => {
+        const regex = new RegExp(k, 'gi');
+        highlighted = highlighted.replace(regex, (match) => `<span class="highlight">${match}</span>`);
+      });
+      return highlighted;
+    }
+
+    function renderList(data, query = "") {
+      listContainer.innerHTML = "";
+      const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
+
+      const filtered = data.filter(item => {
+        const values = Object.values(item).flat().join(" ").toLowerCase();
+        return keywords.every(k => values.includes(k));
+      });
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = "<p>Sonuç bulunamadı.</p>";
+        return;
+      }
+
+      filtered.forEach(item => {
+        const { id, tip, il, ilce, mahalle, ada_parsel, blok, kat, daire, m2net, m2brut, satkir, sfiyat, kfiyat, sahibi, ozellikler, aciklama, durum } = item;
+
+        const title = `${satkir} ${tip} - ${il}/${ilce} - ${mahalle}`;
+        const subtitle = `${blok || ""} Blok ${daire || ""} (${kat || ""})`;
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <h3>${highlightText(title, keywords)}</h3>
+          <div>${highlightText(subtitle, keywords)}</div>
+          <button class="toggle-details">Detay Göster</button>
+          <div class="details">
+            ${ada_parsel ? `<div><b>Ada/Parsel:</b> ${ada_parsel}</div>` : ""}
+            ${m2net ? `<div><b>Net:</b> ${m2net} m²</div>` : ""}
+            ${m2brut ? `<div><b>Brüt:</b> ${m2brut} m²</div>` : ""}
+            ${sfiyat ? `<div><b>Satış Fiyatı:</b> ${formatNumber(sfiyat)} ₺</div>` : ""}
+            ${kfiyat ? `<div><b>Kira:</b> ${formatNumber(kfiyat)} ₺</div>` : ""}
+            ${sahibi ? `<div><b>Sahibi:</b> ${sahibi}</div>` : ""}
+            ${ozellikler && ozellikler.length ? `<div><b>Özellikler:</b> ${ozellikler.join(", ")}</div>` : ""}
+            ${aciklama ? `<div><b>Açıklama:</b> ${aciklama}</div>` : ""}
+            ${durum ? `<div><b>Durum:</b> ${durum}</div>` : ""}
           </div>
-          <div>
-            <strong>${formatPrice(item.sfiyat)} ₺</strong>
-            <br/>
-            <button class="toggle-btn">Detay</button>
-          </div>
-        </div>
-        <div class="item-details">
-          ${item.mahalle ? `<p><strong>Mahalle:</strong> ${item.mahalle}</p>` : ""}
-          ${item.blok || item.kat || item.daire ? `<p><strong>Blok:</strong> ${item.blok || "-"} - <strong>Kat:</strong> ${item.kat || "-"} - <strong>Daire:</strong> ${item.daire || "-"}</p>` : ""}
-          ${item.m2net || item.m2brut ? `<p><strong>Net/Brüt m²:</strong> ${item.m2net || "-"} / ${item.m2brut || "-"}</p>` : ""}
-          ${item.kfiyat ? `<p><strong>Kira Fiyatı:</strong> ${formatPrice(item.kfiyat)} ₺</p>` : ""}
-          ${item.sahibi ? `<p><strong>Sahibi:</strong> ${item.sahibi}</p>` : ""}
-          ${item.ozellikler?.length ? `<p><strong>Özellikler:</strong> ${item.ozellikler.join(', ')}</p>` : ""}
-          ${item.aciklama ? `<p><strong>Açıklama:</strong> ${item.aciklama}</p>` : ""}
-        </div>
-      `;
-      const btn = div.querySelector(".toggle-btn");
-      const details = div.querySelector(".item-details");
-      btn.onclick = () => {
-        details.style.display = (details.style.display === "none" || !details.style.display) ? "block" : "none";
-        btn.textContent = details.style.display === "block" ? "Gizle" : "Detay";
-      };
-      container.appendChild(div);
+        `;
+
+        const toggleBtn = card.querySelector(".toggle-details");
+        const detailsDiv = card.querySelector(".details");
+        toggleBtn.onclick = () => {
+          detailsDiv.classList.toggle("show-details");
+          toggleBtn.textContent = detailsDiv.classList.contains("show-details") ? "Detay Gizle" : "Detay Göster";
+        };
+
+        listContainer.appendChild(card);
+      });
+    }
+
+    function renderFilterButtons() {
+      const container = document.getElementById("filterButtons");
+      container.innerHTML = "";
+      filterButtons.forEach(label => {
+        const btn = document.createElement("button");
+        btn.textContent = label;
+        btn.className = "filter-button";
+        btn.onclick = () => {
+          const terms = searchInput.value.trim().toLowerCase().split(/\s+/);
+          if (!terms.includes(label.toLowerCase())) {
+            terms.push(label.toLowerCase());
+            searchInput.value = terms.join(" ");
+            renderList(window.salesData, searchInput.value);
+          }
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    searchInput.addEventListener("input", () => {
+      renderList(window.salesData, searchInput.value);
     });
-  }
 
-  searchInput.addEventListener("input", () => {
-    renderList(window.salesData, searchInput.value);
-  });
-
-  window.onload = async () => {
-    searchInput.value = getQueryParam("arama") || "";
-    const data = await fetchData();
-    window.salesData = data;
-    renderList(data, searchInput.value);
-  };
-</script>
-
-
+    window.onload = async () => {
+      const arama = getQueryParam("arama");
+      if (arama) searchInput.value = decodeURIComponent(arama);
+      const data = await fetchData();
+      window.salesData = data;
+      renderFilterButtons();
+      renderList(data, searchInput.value);
+    };
+  </script>
 </body>
 </html>
