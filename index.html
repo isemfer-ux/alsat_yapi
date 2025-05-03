@@ -1,98 +1,106 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satış Listesi</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
       padding: 1rem;
+      margin: 0;
+      background-color: #f4f4f4;
     }
-    h1 {
-      text-align: center;
+    input#arama {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
       margin-bottom: 1rem;
+      box-sizing: border-box;
     }
     .item {
       background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 1rem;
       margin-bottom: 1rem;
-      overflow: hidden;
-      transition: all 0.3s ease;
+      border-left: 5px solid #007bff;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
       cursor: pointer;
     }
-    .item-header {
-      padding: 1rem;
-      border-bottom: 1px solid #eee;
+    .title {
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
     }
-    .item-header h2 {
-      margin: 0;
-      font-size: 1.1rem;
-    }
-    .item-details {
-      padding: 1rem;
+    .detay {
       display: none;
+      margin-top: 0.5rem;
+      color: #555;
     }
-    .item.open .item-details {
-      display: block;
-    }
-    .item-details p {
-      margin: 0.4rem 0;
-      font-size: 0.95rem;
-    }
-    @media (min-width: 600px) {
-      .item {
-        max-width: 500px;
-        margin: 1rem auto;
-      }
+    .fiyat {
+      font-weight: bold;
+      color: #d32f2f;
     }
   </style>
 </head>
 <body>
 
-  <h1>Satış Listesi</h1>
-  <div id="liste"></div>
+  <input type="text" id="arama" placeholder="Aramak için yazın...">
+
+  <div id="liste">Yükleniyor...</div>
 
   <script>
-    fetch('https://raw.githubusercontent.com/isemfer-ux/alsat_yapi/main/satis_listesi.json')
+    const aramaKutusu = document.getElementById('arama');
+    const listeDiv = document.getElementById('liste');
+    const urlParams = new URLSearchParams(window.location.search);
+    const aranan = urlParams.get('arama');
+
+    let veriler = [];
+
+    function listele(data) {
+      listeDiv.innerHTML = '';
+      data.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <div class="title">${item.baslik || 'Başlıksız'}</div>
+          <div class="fiyat">${item.fiyat || '-'}</div>
+          <div class="detay" id="detay-${index}">
+            <div><strong>Tür:</strong> ${item.tur || '-'}</div>
+            <div><strong>Detay:</strong> ${item.detay || '-'}</div>
+          </div>
+        `;
+        div.addEventListener('click', () => {
+          const detay = document.getElementById(`detay-${index}`);
+          detay.style.display = detay.style.display === 'none' ? 'block' : 'none';
+        });
+        listeDiv.appendChild(div);
+      });
+    }
+
+    function filtreleListe(kelime) {
+      const filtreli = veriler.filter(item => {
+        const tumText = JSON.stringify(item).toLowerCase();
+        return tumText.includes(kelime.toLowerCase());
+      });
+      listele(filtreli);
+    }
+
+    fetch('https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json')
       .then(res => res.json())
       .then(data => {
-        const liste = document.getElementById('liste');
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'item';
-
-          div.innerHTML = `
-            <div class="item-header">
-              <h2>${item.tip} - ${item.il} / ${item.ilce}</h2>
-              <p><strong>Fiyat:</strong> ${item.sfiyat} TL / <strong>Kiralık:</strong>${item.kfiyat || ''}</p>
-              <p>${item.aciklama || 'Yok'}</p>
-            </div>
-            <div class="item-details">
-              <p><strong>Durum:</strong> ${item.durum}</p>
-              <p><strong>Adres:</strong> ${item.adres || 'Bilinmiyor'}</p>
-              <p><strong>Özellikler:</strong> ${item.ozellikler?.join(', ') || 'Yok'}</p>
-              
-              <p><strong>İlan Kodu:</strong> ${item.id}</p>
-            </div>
-          `;
-
-          // Tıklanınca aç/kapa işlemi
-          div.addEventListener('click', () => {
-            div.classList.toggle('open');
-          });
-
-          liste.appendChild(div);
-        });
-      })
-      .catch(err => {
-        document.getElementById('liste').innerText = "Veriler alınamadı.";
-        console.error("Veri çekme hatası:", err);
+        const icerik = atob(data.content);
+        veriler = JSON.parse(icerik);
+        if (aranan) {
+          aramaKutusu.value = aranan;
+          filtreleListe(aranan);
+        } else {
+          listele(veriler);
+        }
       });
-  </script>
 
+    aramaKutusu.addEventListener('input', e => {
+      filtreleListe(e.target.value);
+    });
+  </script>
 </body>
 </html>
