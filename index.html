@@ -15,24 +15,30 @@
       max-width: 1000px;
       margin: auto;
       padding: 20px;
-      box-sizing: border-box;
     }
 
     #searchInput {
       width: 100%;
       padding: 10px;
       font-size: 16px;
-      margin-bottom: 10px;
-      box-sizing: border-box;
+      margin-bottom: 15px;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
 
-    #filterButtons {
+    .filter-group {
+      margin-bottom: 15px;
+    }
+
+    .filter-group-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .filter-buttons {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 20px;
     }
 
     .filter-button {
@@ -42,7 +48,6 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
-      transition: background-color 0.3s ease;
     }
 
     .filter-button.active {
@@ -61,14 +66,11 @@
     .card h3 {
       margin: 0 0 10px;
       font-size: 18px;
-      color: #333;
     }
 
     .details {
       display: none;
       margin-top: 10px;
-      font-size: 14px;
-      color: #555;
     }
 
     .show-details {
@@ -85,62 +87,114 @@
       cursor: pointer;
       font-size: 13px;
     }
-
-    .highlight {
-      background-color: yellow;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <input type="text" id="searchInput" placeholder="Arama yap..." />
-    <div id="filterButtons"></div>
+    <div id="filtersContainer"></div>
     <div id="listContainer"></div>
   </div>
 
   <script>
     const jsonUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
+
+    const filterGroups = [
+      { title: "Tip", key: "tip", options: ["DAİRE", "DÜKKAN", "ARSA", "ARABA"] },
+      { title: "Durum", key: "satkir", options: ["SATILIK", "KİRALIK"] },
+      { title: "Konum", key: "konum", options: ["AKÇALAR", "NİLÜFER", "BURSA"] }
+    ];
+
+    const activeFilters = {
+      tip: [],
+      satkir: [],
+      konum: []
+    };
+
     const searchInput = document.getElementById("searchInput");
     const listContainer = document.getElementById("listContainer");
+    const filtersContainer = document.getElementById("filtersContainer");
 
-    const filterLabels = ["SATILIK", "KİRALIK", "DAİRE", "DÜKKAN", "AKÇALAR", "NİLÜFER"];
-    let activeFilters = [];
+    async function fetchData() {
+      const res = await fetch(jsonUrl);
+      const { content } = await res.json();
+      const byteArray = Uint8Array.from(atob(content), c => c.charCodeAt(0));
+      const decoded = new TextDecoder("utf-8").decode(byteArray);
+      return JSON.parse(decoded);
+    }
 
     function formatNumber(numStr) {
       const num = Number(numStr);
       return isNaN(num) ? "" : num.toLocaleString("tr-TR");
     }
 
-    async function fetchData() {
-      const res = await fetch(jsonUrl);
-      const { content, encoding } = await res.json();
+    function renderFilterButtons() {
+      filtersContainer.innerHTML = "";
 
-      // UTF-8 decode
-      const byteArray = Uint8Array.from(atob(content), c => c.charCodeAt(0));
-      const decoded = new TextDecoder("utf-8").decode(byteArray);
+      filterGroups.forEach(group => {
+        const groupDiv = document.createElement("div");
+        groupDiv.className = "filter-group";
 
-      return JSON.parse(decoded);
+        const title = document.createElement("div");
+        title.className = "filter-group-title";
+        title.textContent = group.title;
+        groupDiv.appendChild(title);
+
+        const buttonsDiv = document.createElement("div");
+        buttonsDiv.className = "filter-buttons";
+
+        group.options.forEach(option => {
+          const btn = document.createElement("button");
+          btn.textContent = option;
+          btn.className = "filter-button";
+          btn.onclick = () => {
+            const index = activeFilters[group.key].indexOf(option);
+            if (index === -1) {
+              activeFilters[group.key].push(option);
+              btn.classList.add("active");
+            } else {
+              activeFilters[group.key].splice(index, 1);
+              btn.classList.remove("active");
+            }
+            renderList(window.salesData, searchInput.value);
+          };
+          buttonsDiv.appendChild(btn);
+        });
+
+        groupDiv.appendChild(buttonsDiv);
+        filtersContainer.appendChild(groupDiv);
+      });
     }
 
-    function highlightText(text, keywords) {
-      let highlighted = text;
-      keywords.forEach(k => {
-        const regex = new RegExp(k, 'gi');
-        highlighted = highlighted.replace(regex, (match) => `<span class="highlight">${match}</span>`);
-      });
-      return highlighted;
+    function filterItem(item, queryKeywords) {
+      // metin araması
+      const values = Object.values(item).flat().join(" ").toLowerCase();
+      const searchMatch = queryKeywords.every(k => values.includes(k));
+      if (!searchMatch) return false;
+
+      // gruplara göre filtrele
+      const groupChecks = {
+        tip: val => activeFilters.tip.length === 0 || activeFilters.tip.includes(val),
+        satkir: val => activeFilters.satkir.length === 0 || activeFilters.satkir.includes(val),
+        konum: _ => {
+          if (activeFilters.konum.length === 0) return true;
+          const locValues = [item.mahalle, item.ilce, item.il].join(" ").toUpperCase();
+          return activeFilters.konum.some(loc => locValues.includes(loc));
+        }
+      };
+
+      return (
+        groupChecks.tip(item.tip) &&
+        groupChecks.satkir(item.satkir) &&
+        groupChecks.konum()
+      );
     }
 
     function renderList(data, query = "") {
       listContainer.innerHTML = "";
       const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
 
-      const allTerms = [...keywords, ...activeFilters.map(f => f.toLowerCase())];
-
-      const filtered = data.filter(item => {
-        const values = Object.values(item).flat().join(" ").toLowerCase();
-        return allTerms.every(k => values.includes(k));
-      });
+      const filtered = data.filter(item => filterItem(item, keywords));
 
       if (filtered.length === 0) {
         listContainer.innerHTML = "<p>Sonuç bulunamadı.</p>";
@@ -148,28 +202,23 @@
       }
 
       filtered.forEach(item => {
-        const { tip, il, ilce, mahalle, ada_parsel, blok, kat, daire, m2net, m2brut, satkir, sfiyat, kfiyat, sahibi, ozellikler, aciklama, durum } = item;
-
-        const title = `${satkir} ${tip} - ${il}/${ilce} - ${mahalle}`;
-        const subtitle = `${blok || ""} Blok ${daire || ""} (${kat || ""})`;
-
         const card = document.createElement("div");
         card.className = "card";
 
         card.innerHTML = `
-          <h3>${highlightText(title, allTerms)}</h3>
-          <div>${highlightText(subtitle, allTerms)}</div>
+          <h3>${item.satkir || ""} ${item.tip || ""} - ${item.il || ""}/${item.ilce || ""} - ${item.mahalle || ""}</h3>
+          <div>${item.blok || ""} Blok ${item.daire || ""} (${item.kat || ""})</div>
           <button class="toggle-details">Detay Göster</button>
           <div class="details">
-            ${ada_parsel ? `<div><b>Ada/Parsel:</b> ${ada_parsel}</div>` : ""}
-            ${m2net ? `<div><b>Net:</b> ${m2net} m²</div>` : ""}
-            ${m2brut ? `<div><b>Brüt:</b> ${m2brut} m²</div>` : ""}
-            ${sfiyat ? `<div><b>Satış Fiyatı:</b> ${formatNumber(sfiyat)} ₺</div>` : ""}
-            ${kfiyat ? `<div><b>Kira:</b> ${formatNumber(kfiyat)} ₺</div>` : ""}
-            ${sahibi ? `<div><b>Sahibi:</b> ${sahibi}</div>` : ""}
-            ${ozellikler && ozellikler.length ? `<div><b>Özellikler:</b> ${ozellikler.join(", ")}</div>` : ""}
-            ${aciklama ? `<div><b>Açıklama:</b> ${aciklama}</div>` : ""}
-            ${durum ? `<div><b>Durum:</b> ${durum}</div>` : ""}
+            ${item.ada_parsel ? `<div><b>Ada/Parsel:</b> ${item.ada_parsel}</div>` : ""}
+            ${item.m2net ? `<div><b>Net:</b> ${item.m2net} m²</div>` : ""}
+            ${item.m2brut ? `<div><b>Brüt:</b> ${item.m2brut} m²</div>` : ""}
+            ${item.sfiyat ? `<div><b>Satış Fiyatı:</b> ${formatNumber(item.sfiyat)} ₺</div>` : ""}
+            ${item.kfiyat ? `<div><b>Kira:</b> ${formatNumber(item.kfiyat)} ₺</div>` : ""}
+            ${item.sahibi ? `<div><b>Sahibi:</b> ${item.sahibi}</div>` : ""}
+            ${item.ozellikler ? `<div><b>Özellikler:</b> ${item.ozellikler.join(", ")}</div>` : ""}
+            ${item.aciklama ? `<div><b>Açıklama:</b> ${item.aciklama}</div>` : ""}
+            ${item.durum ? `<div><b>Durum:</b> ${item.durum}</div>` : ""}
           </div>
         `;
 
@@ -184,44 +233,15 @@
       });
     }
 
-    function renderFilterButtons() {
-      const container = document.getElementById("filterButtons");
-      container.innerHTML = "";
-      filterLabels.forEach(label => {
-        const btn = document.createElement("button");
-        btn.textContent = label;
-        btn.className = "filter-button";
-        btn.onclick = () => {
-          const index = activeFilters.indexOf(label);
-          if (index === -1) {
-            activeFilters.push(label);
-            btn.classList.add("active");
-          } else {
-            activeFilters.splice(index, 1);
-            btn.classList.remove("active");
-          }
-          renderList(window.salesData, searchInput.value);
-        };
-        container.appendChild(btn);
-      });
-    }
-
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
     searchInput.addEventListener("input", () => {
       renderList(window.salesData, searchInput.value);
     });
 
     window.onload = async () => {
-      const arama = getQueryParam("arama");
-      if (arama) searchInput.value = decodeURIComponent(arama);
       const data = await fetchData();
       window.salesData = data;
       renderFilterButtons();
-      renderList(data, searchInput.value);
+      renderList(data);
     };
   </script>
 </body>
