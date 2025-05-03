@@ -2,38 +2,46 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satış Listesi</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .filter-btn {
-      @apply px-3 py-1 rounded font-medium transition-all text-sm;
+      @apply px-3 py-1 rounded-full font-medium text-sm backdrop-blur shadow border transition-all;
+      opacity: 0.8;
     }
+
     .group-satkir {
-      background-color: #e0f2fe;
+      background-color: rgba(56,189,248,0.1);
       color: #0284c7;
+      border-color: #7dd3fc;
     }
     .group-satkir.active {
       background-color: #0284c7;
       color: white;
+      opacity: 1;
     }
 
     .group-tip {
-      background-color: #fef3c7;
+      background-color: rgba(253,224,71,0.2);
       color: #b45309;
+      border-color: #fde68a;
     }
     .group-tip.active {
       background-color: #b45309;
       color: white;
+      opacity: 1;
     }
 
     .group-ilce {
-      background-color: #ecfccb;
+      background-color: rgba(134,239,172,0.2);
       color: #15803d;
+      border-color: #bbf7d0;
     }
     .group-ilce.active {
       background-color: #15803d;
       color: white;
+      opacity: 1;
     }
   </style>
 </head>
@@ -43,8 +51,8 @@
   <div class="sticky top-0 bg-white z-10 shadow p-4 space-y-3">
     <input id="searchInput" type="text" placeholder="Ara..." class="border p-2 rounded w-full" />
 
-    <div class="flex flex-wrap gap-2 text-center">
-      <!-- Sat/Kir -->
+    <div class="flex flex-wrap gap-2">
+      <!-- SATILIK/KİRALIK -->
       <button class="filter-btn group-satkir" data-group="satkir" data-value="SATILIK">SATILIK</button>
       <button class="filter-btn group-satkir" data-group="satkir" data-value="KİRALIK">KİRALIK</button>
 
@@ -52,6 +60,7 @@
       <button class="filter-btn group-tip" data-group="tip" data-value="DAİRE">DAİRE</button>
       <button class="filter-btn group-tip" data-group="tip" data-value="DÜKKAN">DÜKKAN</button>
       <button class="filter-btn group-tip" data-group="tip" data-value="ARSA">ARSA</button>
+      <button class="filter-btn group-tip" data-group="tip" data-value="ARABA">ARABA</button>
 
       <!-- İlçe -->
       <button class="filter-btn group-ilce" data-group="ilce" data-value="AKÇALAR">AKÇALAR</button>
@@ -59,7 +68,7 @@
       <button class="filter-btn group-ilce" data-group="ilce" data-value="BURSA">BURSA</button>
     </div>
 
-    <div id="resultCount" class="text-sm text-center text-gray-600"></div>
+    <div id="resultCount" class="text-sm text-center text-gray-600 mt-1"></div>
   </div>
 
   <!-- Liste -->
@@ -69,13 +78,17 @@
     const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
     const filters = {};
 
-    function fetchData() {
-      fetch(apiUrl)
-        .then(res => res.json())
-        .then(data => {
-          const json = JSON.parse(atob(data.content));
-          renderList(json);
-        });
+    function normalize(str) {
+      return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/ç/g, "c")
+        .replace(/ğ/g, "g")
+        .replace(/ı/g, "i")
+        .replace(/ö/g, "o")
+        .replace(/ş/g, "s")
+        .replace(/ü/g, "u");
     }
 
     function formatNumber(n) {
@@ -84,16 +97,16 @@
 
     function renderList(data) {
       const container = document.getElementById("listContainer");
-      const query = document.getElementById("searchInput").value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const query = normalize(document.getElementById("searchInput").value);
+      const terms = query.split(" ").filter(Boolean);
 
       const filtered = data.filter(item => {
-        // Arama
-        const haystack = Object.values(item).join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const terms = query.split(" ").filter(x => x.length > 0);
+        const haystack = normalize(Object.values(item).join(" "));
         const searchMatch = terms.every(term => haystack.includes(term));
 
-        // Filtre
-        const groupMatch = Object.keys(filters).every(key => filters[key].length === 0 || filters[key].includes(item[key]));
+        const groupMatch = Object.keys(filters).every(group => {
+          return !filters[group] || filters[group].length === 0 || filters[group].includes(item[group]);
+        });
 
         return searchMatch && groupMatch;
       });
@@ -116,8 +129,8 @@
           <div class="details hidden text-sm mt-2 space-y-1">
             ${item.aciklama ? `<div><strong>Açıklama:</strong> ${item.aciklama}</div>` : ""}
             ${item.ozellikler?.length ? `<div><strong>Özellikler:</strong> ${item.ozellikler.join(", ")}</div>` : ""}
-            <div><strong>Adres:</strong> ${item.il}, ${item.ilce}, ${item.mahalle}</div>
-            <div><strong>Kat:</strong> ${item.kat} - Daire No: ${item.daire}</div>
+            ${item.mahalle ? `<div><strong>Adres:</strong> ${item.il}, ${item.ilce}, ${item.mahalle}</div>` : ""}
+            ${item.kat ? `<div><strong>Kat:</strong> ${item.kat} - Daire No: ${item.daire}</div>` : ""}
             <div><strong>Net/Brüt:</strong> ${item.m2net} / ${item.m2brut} m²</div>
             <div><strong>Durum:</strong> ${item.durum}</div>
           </div>
@@ -144,8 +157,8 @@
       btn.addEventListener("click", () => {
         const group = btn.dataset.group;
         const value = btn.dataset.value;
-
         filters[group] = filters[group] || [];
+
         if (filters[group].includes(value)) {
           filters[group] = filters[group].filter(v => v !== value);
           btn.classList.remove("active");
@@ -153,12 +166,10 @@
           filters[group].push(value);
           btn.classList.add("active");
         }
-
         renderList(window.rawData);
       });
     });
 
-    // Linkle arama başlat
     function initFromURL() {
       const urlParams = new URLSearchParams(window.location.search);
       const q = urlParams.get("arama");
@@ -168,14 +179,12 @@
     }
 
     // Başlat
-    fetchData();
-    initFromURL();
-    window.rawData = [];
     fetch(apiUrl)
       .then(res => res.json())
       .then(data => {
         const json = JSON.parse(atob(data.content));
         window.rawData = json;
+        initFromURL();
         renderList(json);
       });
   </script>
