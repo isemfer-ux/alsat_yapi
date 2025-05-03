@@ -38,7 +38,6 @@
     return urlParams.get(param) || "";
   }
 
-  // UTF-8 destekli base64 çözümleme
   function decodeBase64Utf8(base64) {
     return decodeURIComponent(
       atob(base64)
@@ -57,25 +56,29 @@
 
   function formatPrice(value) {
     const num = parseFloat(value);
-    return isNaN(num) ? value : num.toLocaleString('tr-TR');
+    return isNaN(num) ? "" : num.toLocaleString('tr-TR');
   }
 
   function normalize(str) {
     return str
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Türkçe karakterleri normalize et
+      .replace(/[\u0300-\u036f]/g, "")
       .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
       .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c');
   }
 
-  function matchesSearch(item, term) {
+  function matchesSearch(item, searchText) {
+    const words = normalize(searchText).split(/\s+/).filter(Boolean);
     const flat = [
       item.id, item.tip, item.il, item.ilce, item.mahalle,
+      item.blok, item.kat, item.daire,
       item.satkir, item.durum, item.aciklama,
       ...(item.ozellikler || [])
     ].join(' ').toLowerCase();
-    return normalize(flat).includes(normalize(term));
+    const normalizedFlat = normalize(flat);
+
+    return words.every(word => normalizedFlat.includes(word));
   }
 
   function renderList(data, filter = "") {
@@ -102,13 +105,13 @@
           </div>
         </div>
         <div class="item-details">
-          <p><strong>Mahalle:</strong> ${item.mahalle}</p>
-          <p><strong>Blok:</strong> ${item.blok} - <strong>Kat:</strong> ${item.kat} - <strong>Daire:</strong> ${item.daire}</p>
-          <p><strong>Net/Brüt m²:</strong> ${item.m2net} / ${item.m2brut}</p>
-          <p><strong>Kira Fiyatı:</strong> ${formatPrice(item.kfiyat)} ₺</p>
-          <p><strong>Sahibi:</strong> ${item.sahibi}</p>
-          <p><strong>Özellikler:</strong> ${item.ozellikler?.join(', ')}</p>
-          <p><strong>Açıklama:</strong> ${item.aciklama}</p>
+          ${item.mahalle ? `<p><strong>Mahalle:</strong> ${item.mahalle}</p>` : ""}
+          ${item.blok || item.kat || item.daire ? `<p><strong>Blok:</strong> ${item.blok || "-"} - <strong>Kat:</strong> ${item.kat || "-"} - <strong>Daire:</strong> ${item.daire || "-"}</p>` : ""}
+          ${item.m2net || item.m2brut ? `<p><strong>Net/Brüt m²:</strong> ${item.m2net || "-"} / ${item.m2brut || "-"}</p>` : ""}
+          ${item.kfiyat ? `<p><strong>Kira Fiyatı:</strong> ${formatPrice(item.kfiyat)} ₺</p>` : ""}
+          ${item.sahibi ? `<p><strong>Sahibi:</strong> ${item.sahibi}</p>` : ""}
+          ${item.ozellikler?.length ? `<p><strong>Özellikler:</strong> ${item.ozellikler.join(', ')}</p>` : ""}
+          ${item.aciklama ? `<p><strong>Açıklama:</strong> ${item.aciklama}</p>` : ""}
         </div>
       `;
       const btn = div.querySelector(".toggle-btn");
@@ -132,6 +135,7 @@
     renderList(data, searchInput.value);
   };
 </script>
+
 
 </body>
 </html>
