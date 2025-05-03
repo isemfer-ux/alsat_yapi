@@ -2,247 +2,182 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Satış Listesi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f9f9f9;
+    .filter-btn {
+      @apply px-3 py-1 rounded font-medium transition-all text-sm;
     }
-
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      padding: 20px;
+    .group-satkir {
+      background-color: #e0f2fe;
+      color: #0284c7;
     }
-
-    #searchInput {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    .filter-group {
-      margin-bottom: 15px;
-    }
-
-    .filter-group-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .filter-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .filter-button {
-      background-color: #eee;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .filter-button.active {
-      background-color: #007bff;
+    .group-satkir.active {
+      background-color: #0284c7;
       color: white;
     }
 
-    .card {
-      background: white;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    .group-tip {
+      background-color: #fef3c7;
+      color: #b45309;
     }
-
-    .card h3 {
-      margin: 0 0 10px;
-      font-size: 18px;
-    }
-
-    .details {
-      display: none;
-      margin-top: 10px;
-    }
-
-    .show-details {
-      display: block;
-    }
-
-    .toggle-details {
-      margin-top: 10px;
-      background-color: #007bff;
+    .group-tip.active {
+      background-color: #b45309;
       color: white;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 13px;
+    }
+
+    .group-ilce {
+      background-color: #ecfccb;
+      color: #15803d;
+    }
+    .group-ilce.active {
+      background-color: #15803d;
+      color: white;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <input type="text" id="searchInput" placeholder="Arama yap..." />
-    <div id="filtersContainer"></div>
-    <div id="listContainer"></div>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Üst Arama + Filtre -->
+  <div class="sticky top-0 bg-white z-10 shadow p-4 space-y-3">
+    <input id="searchInput" type="text" placeholder="Ara..." class="border p-2 rounded w-full" />
+
+    <div class="flex flex-wrap gap-2 text-center">
+      <!-- Sat/Kir -->
+      <button class="filter-btn group-satkir" data-group="satkir" data-value="SATILIK">SATILIK</button>
+      <button class="filter-btn group-satkir" data-group="satkir" data-value="KİRALIK">KİRALIK</button>
+
+      <!-- Tip -->
+      <button class="filter-btn group-tip" data-group="tip" data-value="DAİRE">DAİRE</button>
+      <button class="filter-btn group-tip" data-group="tip" data-value="DÜKKAN">DÜKKAN</button>
+      <button class="filter-btn group-tip" data-group="tip" data-value="ARSA">ARSA</button>
+
+      <!-- İlçe -->
+      <button class="filter-btn group-ilce" data-group="ilce" data-value="AKÇALAR">AKÇALAR</button>
+      <button class="filter-btn group-ilce" data-group="ilce" data-value="NİLÜFER">NİLÜFER</button>
+      <button class="filter-btn group-ilce" data-group="ilce" data-value="BURSA">BURSA</button>
+    </div>
+
+    <div id="resultCount" class="text-sm text-center text-gray-600"></div>
   </div>
 
+  <!-- Liste -->
+  <div id="listContainer" class="p-4 space-y-4"></div>
+
   <script>
-    const jsonUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
+    const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
+    const filters = {};
 
-    const filterGroups = [
-      { title: "Tip", key: "tip", options: ["DAİRE", "DÜKKAN", "ARSA", "ARABA"] },
-      { title: "Durum", key: "satkir", options: ["SATILIK", "KİRALIK"] },
-      { title: "Konum", key: "konum", options: ["AKÇALAR", "NİLÜFER", "BURSA"] }
-    ];
-
-    const activeFilters = {
-      tip: [],
-      satkir: [],
-      konum: []
-    };
-
-    const searchInput = document.getElementById("searchInput");
-    const listContainer = document.getElementById("listContainer");
-    const filtersContainer = document.getElementById("filtersContainer");
-
-    async function fetchData() {
-      const res = await fetch(jsonUrl);
-      const { content } = await res.json();
-      const byteArray = Uint8Array.from(atob(content), c => c.charCodeAt(0));
-      const decoded = new TextDecoder("utf-8").decode(byteArray);
-      return JSON.parse(decoded);
-    }
-
-    function formatNumber(numStr) {
-      const num = Number(numStr);
-      return isNaN(num) ? "" : num.toLocaleString("tr-TR");
-    }
-
-    function renderFilterButtons() {
-      filtersContainer.innerHTML = "";
-
-      filterGroups.forEach(group => {
-        const groupDiv = document.createElement("div");
-        groupDiv.className = "filter-group";
-
-        const title = document.createElement("div");
-        title.className = "filter-group-title";
-        title.textContent = group.title;
-        groupDiv.appendChild(title);
-
-        const buttonsDiv = document.createElement("div");
-        buttonsDiv.className = "filter-buttons";
-
-        group.options.forEach(option => {
-          const btn = document.createElement("button");
-          btn.textContent = option;
-          btn.className = "filter-button";
-          btn.onclick = () => {
-            const index = activeFilters[group.key].indexOf(option);
-            if (index === -1) {
-              activeFilters[group.key].push(option);
-              btn.classList.add("active");
-            } else {
-              activeFilters[group.key].splice(index, 1);
-              btn.classList.remove("active");
-            }
-            renderList(window.salesData, searchInput.value);
-          };
-          buttonsDiv.appendChild(btn);
+    function fetchData() {
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          const json = JSON.parse(atob(data.content));
+          renderList(json);
         });
+    }
 
-        groupDiv.appendChild(buttonsDiv);
-        filtersContainer.appendChild(groupDiv);
+    function formatNumber(n) {
+      return parseInt(n).toLocaleString("tr-TR");
+    }
+
+    function renderList(data) {
+      const container = document.getElementById("listContainer");
+      const query = document.getElementById("searchInput").value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      const filtered = data.filter(item => {
+        // Arama
+        const haystack = Object.values(item).join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const terms = query.split(" ").filter(x => x.length > 0);
+        const searchMatch = terms.every(term => haystack.includes(term));
+
+        // Filtre
+        const groupMatch = Object.keys(filters).every(key => filters[key].length === 0 || filters[key].includes(item[key]));
+
+        return searchMatch && groupMatch;
       });
-    }
 
-    function filterItem(item, queryKeywords) {
-      // metin araması
-      const values = Object.values(item).flat().join(" ").toLowerCase();
-      const searchMatch = queryKeywords.every(k => values.includes(k));
-      if (!searchMatch) return false;
-
-      // gruplara göre filtrele
-      const groupChecks = {
-        tip: val => activeFilters.tip.length === 0 || activeFilters.tip.includes(val),
-        satkir: val => activeFilters.satkir.length === 0 || activeFilters.satkir.includes(val),
-        konum: _ => {
-          if (activeFilters.konum.length === 0) return true;
-          const locValues = [item.mahalle, item.ilce, item.il].join(" ").toUpperCase();
-          return activeFilters.konum.some(loc => locValues.includes(loc));
-        }
-      };
-
-      return (
-        groupChecks.tip(item.tip) &&
-        groupChecks.satkir(item.satkir) &&
-        groupChecks.konum()
-      );
-    }
-
-    function renderList(data, query = "") {
-      listContainer.innerHTML = "";
-      const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
-
-      const filtered = data.filter(item => filterItem(item, keywords));
-
-      if (filtered.length === 0) {
-        listContainer.innerHTML = "<p>Sonuç bulunamadı.</p>";
-        return;
-      }
+      container.innerHTML = "";
 
       filtered.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "card";
+        const box = document.createElement("div");
+        box.className = "bg-white rounded shadow p-4 space-y-2";
 
-        card.innerHTML = `
-          <h3>${item.satkir || ""} ${item.tip || ""} - ${item.il || ""}/${item.ilce || ""} - ${item.mahalle || ""}</h3>
-          <div>${item.blok || ""} Blok ${item.daire || ""} (${item.kat || ""})</div>
-          <button class="toggle-details">Detay Göster</button>
-          <div class="details">
-            ${item.ada_parsel ? `<div><b>Ada/Parsel:</b> ${item.ada_parsel}</div>` : ""}
-            ${item.m2net ? `<div><b>Net:</b> ${item.m2net} m²</div>` : ""}
-            ${item.m2brut ? `<div><b>Brüt:</b> ${item.m2brut} m²</div>` : ""}
-            ${item.sfiyat ? `<div><b>Satış Fiyatı:</b> ${formatNumber(item.sfiyat)} ₺</div>` : ""}
-            ${item.kfiyat ? `<div><b>Kira:</b> ${formatNumber(item.kfiyat)} ₺</div>` : ""}
-            ${item.sahibi ? `<div><b>Sahibi:</b> ${item.sahibi}</div>` : ""}
-            ${item.ozellikler ? `<div><b>Özellikler:</b> ${item.ozellikler.join(", ")}</div>` : ""}
-            ${item.aciklama ? `<div><b>Açıklama:</b> ${item.aciklama}</div>` : ""}
-            ${item.durum ? `<div><b>Durum:</b> ${item.durum}</div>` : ""}
+        const title = `${item.satkir} ${item.tip} - ${item.ilce} - ${item.m2net} m²`;
+        const fiyat = `${formatNumber(item.sfiyat)} ₺`;
+
+        box.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="font-bold">${title}</div>
+            <div class="text-green-600 font-semibold">${fiyat}</div>
+          </div>
+          <button class="text-blue-500 underline text-sm toggle-details">Detay Göster</button>
+          <div class="details hidden text-sm mt-2 space-y-1">
+            ${item.aciklama ? `<div><strong>Açıklama:</strong> ${item.aciklama}</div>` : ""}
+            ${item.ozellikler?.length ? `<div><strong>Özellikler:</strong> ${item.ozellikler.join(", ")}</div>` : ""}
+            <div><strong>Adres:</strong> ${item.il}, ${item.ilce}, ${item.mahalle}</div>
+            <div><strong>Kat:</strong> ${item.kat} - Daire No: ${item.daire}</div>
+            <div><strong>Net/Brüt:</strong> ${item.m2net} / ${item.m2brut} m²</div>
+            <div><strong>Durum:</strong> ${item.durum}</div>
           </div>
         `;
-
-        const toggleBtn = card.querySelector(".toggle-details");
-        const detailsDiv = card.querySelector(".details");
-        toggleBtn.onclick = () => {
-          detailsDiv.classList.toggle("show-details");
-          toggleBtn.textContent = detailsDiv.classList.contains("show-details") ? "Detay Gizle" : "Detay Göster";
-        };
-
-        listContainer.appendChild(card);
+        container.appendChild(box);
       });
+
+      document.querySelectorAll(".toggle-details").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const details = btn.nextElementSibling;
+          details.classList.toggle("hidden");
+          btn.textContent = details.classList.contains("hidden") ? "Detay Göster" : "Detay Gizle";
+        });
+      });
+
+      document.getElementById("resultCount").textContent = `${filtered.length} ürün bulundu`;
     }
 
-    searchInput.addEventListener("input", () => {
-      renderList(window.salesData, searchInput.value);
+    // Arama
+    document.getElementById("searchInput").addEventListener("input", () => renderList(window.rawData));
+
+    // Butonlar
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const group = btn.dataset.group;
+        const value = btn.dataset.value;
+
+        filters[group] = filters[group] || [];
+        if (filters[group].includes(value)) {
+          filters[group] = filters[group].filter(v => v !== value);
+          btn.classList.remove("active");
+        } else {
+          filters[group].push(value);
+          btn.classList.add("active");
+        }
+
+        renderList(window.rawData);
+      });
     });
 
-    window.onload = async () => {
-      const data = await fetchData();
-      window.salesData = data;
-      renderFilterButtons();
-      renderList(data);
-    };
+    // Linkle arama başlat
+    function initFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const q = urlParams.get("arama");
+      if (q) {
+        document.getElementById("searchInput").value = q;
+      }
+    }
+
+    // Başlat
+    fetchData();
+    initFromURL();
+    window.rawData = [];
+    fetch(apiUrl)
+      .then(res => res.json())
+      .then(data => {
+        const json = JSON.parse(atob(data.content));
+        window.rawData = json;
+        renderList(json);
+      });
   </script>
 </body>
 </html>
