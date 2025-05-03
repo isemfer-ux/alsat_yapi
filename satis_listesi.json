@@ -16,7 +16,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "site içi"],
-	"aciklama": "MÜLK AÇIKLAMASI",
+	"aciklama": "191/3 F1",
 	"durum": ""
   },
   {
@@ -36,7 +36,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "site içi"],
-	"aciklama": "MÜLK AÇIKLAMASI",
+	"aciklama": "191/3 F2",
 	"durum": ""
   },
   {
@@ -56,7 +56,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "bahçeli", "site içi"],
-	"aciklama": "MÜLK AÇIKLAMASI",
+	"aciklama": "191/3 G1",
 	"durum": "OPSİYONLU"
   },
   {
@@ -76,7 +76,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "site içi"],
-	"aciklama": "MÜLK AÇIKLAMASI",
+	"aciklama": "191/3 G2",
 	"durum": ""
   },
   {
@@ -96,7 +96,7 @@
 	"kfiyat": "",
 	"sahibi": "ALSAT YAPI",
 	"ozellikler": ["3+1", "asansör", "otopark", "zemin kat", "batı"],
-	"aciklama": "MÜLK AÇIKLAMASI",
+	"aciklama": "191/3 H1",
 	"durum": ""
   }
 ]
