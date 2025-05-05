@@ -3,198 +3,116 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Düzenle / Yeni Kayıt</title>
+  <title>Veri Düzenleme</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 p-4">
+<body class="bg-gray-100 text-gray-800 p-4">
 
-  <!-- Sekmeler -->
-  <div class="flex space-x-4 mb-6">
-    <button id="tabList" class="tab-btn font-semibold border-b-2 border-blue-500">📋 Kayıtları Listele</button>
-    <button id="tabNew" class="tab-btn font-semibold text-gray-600">➕ Yeni Kayıt Ekle</button>
-  </div>
+  <div class="max-w-5xl mx-auto bg-white rounded shadow p-6 space-y-6">
+    <div class="flex space-x-4">
+      <button id="tabList" class="px-4 py-2 bg-blue-500 text-white rounded">Veri Listesi</button>
+      <button id="tabAdd" class="px-4 py-2 bg-gray-300 text-black rounded">Yeni Veri Ekle</button>
+    </div>
 
-  <!-- Sekme İçerikleri -->
-  <div id="sectionList" class="space-y-4">
-    <div id="editListContainer"></div>
-  </div>
+    <!-- Veri Listesi -->
+    <div id="listView" class="space-y-4">
+      <div id="jsonList" class="space-y-2 text-sm"></div>
+    </div>
 
-  <div id="sectionNew" class="hidden">
-    <form id="newForm" class="space-y-4 bg-white p-4 rounded shadow">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <input type="text" name="satkir" placeholder="SATILIK / KİRALIK" class="border p-2 rounded" required />
-        <input type="text" name="tip" placeholder="DAİRE / DÜKKAN / ..." class="border p-2 rounded" required />
-        <input type="text" name="ilce" placeholder="İlçe" class="border p-2 rounded" required />
-        <input type="text" name="il" placeholder="İl" class="border p-2 rounded" />
-        <input type="number" name="sfiyat" placeholder="Fiyat" class="border p-2 rounded" />
-        <input type="number" name="m2net" placeholder="Net m²" class="border p-2 rounded" />
-        <input type="number" name="m2brut" placeholder="Brüt m²" class="border p-2 rounded" />
-        <input type="text" name="mahalle" placeholder="Mahalle" class="border p-2 rounded" />
-        <input type="text" name="kat" placeholder="Kat" class="border p-2 rounded" />
-        <input type="text" name="daire" placeholder="Daire No" class="border p-2 rounded" />
-        <input type="text" name="durum" placeholder="Durum" class="border p-2 rounded" />
-        <input type="text" name="ozellikler" placeholder="Özellikler (virgülle ayır)" class="border p-2 rounded" />
-      </div>
-      <textarea name="aciklama" placeholder="Açıklama" class="border p-2 rounded w-full h-24"></textarea>
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Kaydet</button>
-    </form>
-  </div>
-
-  <!-- Modal: Sil Onayı -->
-  <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white p-6 rounded shadow space-y-4 max-w-sm w-full">
-      <p class="text-center text-lg font-semibold">Bu kaydı silmek istediğinizden emin misiniz?</p>
-      <div class="flex justify-between">
-        <button id="cancelDelete" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">İptal</button>
-        <button id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Evet, Sil</button>
-      </div>
+    <!-- Yeni Veri Ekleme Formu -->
+    <div id="formView" class="hidden">
+      <form id="addForm" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <input name="satkir" type="text" placeholder="SATILIK / KİRALIK" class="border p-2 rounded" required />
+          <input name="tip" type="text" placeholder="DAİRE / DÜKKAN / ARSA / ARABA" class="border p-2 rounded" required />
+          <input name="il" type="text" placeholder="İl" class="border p-2 rounded" required />
+          <input name="ilce" type="text" placeholder="İlçe" class="border p-2 rounded" required />
+          <input name="mahalle" type="text" placeholder="Mahalle" class="border p-2 rounded" />
+          <input name="kat" type="text" placeholder="Kat" class="border p-2 rounded" />
+          <input name="daire" type="text" placeholder="Daire No" class="border p-2 rounded" />
+          <input name="m2net" type="number" placeholder="Net m²" class="border p-2 rounded" required />
+          <input name="m2brut" type="number" placeholder="Brüt m²" class="border p-2 rounded" />
+          <input name="sfiyat" type="number" placeholder="Satış Fiyatı" class="border p-2 rounded" required />
+          <input name="durum" type="text" placeholder="Durum (Yeni, Eski vs.)" class="border p-2 rounded" />
+        </div>
+        <textarea name="aciklama" placeholder="Açıklama" class="border p-2 rounded w-full"></textarea>
+        <input name="ozellikler" type="text" placeholder="Özellikler (virgülle ayırın)" class="border p-2 rounded w-full" />
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Kaydet</button>
+      </form>
     </div>
   </div>
 
   <script>
-    let currentData = []; // Simülasyon verisi
-    let deleteIndex = null;
+    let data = [];
+    const jsonUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
 
-    function loadDummyData() {
-      currentData = [
-        {
-          satkir: "SATILIK",
-          tip: "DAİRE",
-          ilce: "NİLÜFER",
-          il: "BURSA",
-          sfiyat: 1200000,
-          m2net: 100,
-          m2brut: 120,
-          mahalle: "Çamlıca",
-          kat: "3",
-          daire: "12",
-          durum: "Boş",
-          ozellikler: ["Asansör", "Balkon"],
-          aciklama: ""
-        },
-        {
-          satkir: "KİRALIK",
-          tip: "DÜKKAN",
-          ilce: "AKÇALAR",
-          il: "BURSA",
-          sfiyat: 7500,
-          m2net: 80,
-          m2brut: 100,
-          mahalle: "Merkez",
-          kat: "Zemin",
-          daire: "1",
-          durum: "Kiralık",
-          ozellikler: [],
-          aciklama: ""
-        }
-      ];
-      currentData.forEach(entry => {
-        entry.aciklama = buildAciklama(entry);
-      });
-    }
-
-    function buildAciklama(entry) {
-      return [
-        entry.aciklama,
-        entry.satkir,
-        entry.tip,
-        entry.ilce,
-        entry.il,
-        entry.kat,
-        entry.mahalle,
-        entry.durum,
-        (entry.ozellikler || []).join(", "),
-        `${entry.m2net} m2 net`,
-        `${entry.sfiyat} TL`
-      ].filter(Boolean).join(" | ");
-    }
-
-    function renderEditList() {
-      const container = document.getElementById("editListContainer");
+    function renderList() {
+      const container = document.getElementById("jsonList");
       container.innerHTML = "";
-
-      currentData.forEach((item, index) => {
-        const card = document.createElement("div");
-        card.className = "bg-white p-4 rounded shadow space-y-2";
-
-        card.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div class="font-bold">${item.satkir} ${item.tip} - ${item.ilce}</div>
-            <div class="text-green-600 font-semibold">${item.sfiyat.toLocaleString("tr-TR")} ₺</div>
+      data.forEach((item, i) => {
+        const div = document.createElement("div");
+        div.className = "bg-gray-50 p-3 rounded shadow flex justify-between";
+        div.innerHTML = `
+          <div>
+            <strong>${item.satkir} ${item.tip}</strong> - ${item.il}, ${item.ilce} - ${item.m2net} m² - ${parseInt(item.sfiyat).toLocaleString("tr-TR")} ₺
           </div>
-          <div class="text-sm text-gray-600">${item.aciklama}</div>
-          <div class="flex space-x-2">
-            <button class="edit-btn bg-yellow-500 text-white px-3 py-1 rounded" data-index="${index}">Düzenle</button>
-            <button class="delete-btn bg-red-500 text-white px-3 py-1 rounded" data-index="${index}">Sil</button>
-          </div>
-          <div class="edit-form hidden mt-3 space-y-2">
-            <textarea class="w-full border p-2 rounded">${item.aciklama}</textarea>
-            <button class="save-btn bg-blue-500 text-white px-3 py-1 rounded">Kaydet</button>
-          </div>
+          <button class="text-red-500" onclick="deleteItem(${i})">Sil</button>
         `;
-        container.appendChild(card);
-      });
-
-      document.querySelectorAll(".edit-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const form = btn.closest("div").nextElementSibling;
-          form.classList.toggle("hidden");
-        });
-      });
-
-      document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          deleteIndex = parseInt(btn.dataset.index);
-          document.getElementById("deleteModal").classList.remove("hidden");
-        });
+        container.appendChild(div);
       });
     }
 
-    document.getElementById("cancelDelete").addEventListener("click", () => {
-      deleteIndex = null;
-      document.getElementById("deleteModal").classList.add("hidden");
-    });
-
-    document.getElementById("confirmDelete").addEventListener("click", () => {
-      if (deleteIndex !== null) {
-        currentData.splice(deleteIndex, 1);
-        deleteIndex = null;
-        renderEditList();
+    function deleteItem(index) {
+      if (confirm("Bu veriyi silmek istiyor musunuz?")) {
+        data.splice(index, 1);
+        renderList();
       }
-      document.getElementById("deleteModal").classList.add("hidden");
-    });
+    }
 
-    // Sekmeler
     document.getElementById("tabList").addEventListener("click", () => {
-      document.getElementById("sectionList").classList.remove("hidden");
-      document.getElementById("sectionNew").classList.add("hidden");
-      document.getElementById("tabList").classList.add("border-blue-500");
-      document.getElementById("tabNew").classList.remove("border-blue-500");
+      document.getElementById("listView").classList.remove("hidden");
+      document.getElementById("formView").classList.add("hidden");
+      document.getElementById("tabList").classList.replace("bg-gray-300", "bg-blue-500");
+      document.getElementById("tabList").classList.replace("text-black", "text-white");
+      document.getElementById("tabAdd").classList.replace("bg-blue-500", "bg-gray-300");
+      document.getElementById("tabAdd").classList.replace("text-white", "text-black");
     });
 
-    document.getElementById("tabNew").addEventListener("click", () => {
-      document.getElementById("sectionList").classList.add("hidden");
-      document.getElementById("sectionNew").classList.remove("hidden");
-      document.getElementById("tabNew").classList.add("border-blue-500");
-      document.getElementById("tabList").classList.remove("border-blue-500");
+    document.getElementById("tabAdd").addEventListener("click", () => {
+      document.getElementById("formView").classList.remove("hidden");
+      document.getElementById("listView").classList.add("hidden");
+      document.getElementById("tabAdd").classList.replace("bg-gray-300", "bg-blue-500");
+      document.getElementById("tabAdd").classList.replace("text-black", "text-white");
+      document.getElementById("tabList").classList.replace("bg-blue-500", "bg-gray-300");
+      document.getElementById("tabList").classList.replace("text-white", "text-black");
     });
 
-    document.getElementById("newForm").addEventListener("submit", (e) => {
+    document.getElementById("addForm").addEventListener("submit", e => {
       e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
+      const formData = new FormData(e.target);
       const entry = Object.fromEntries(formData.entries());
-      entry.ozellikler = entry.ozellikler.split(",").map(x => x.trim());
-      entry.aciklama = buildAciklama(entry);
-      currentData.push(entry);
-      form.reset();
-      renderEditList();
-      alert("Kayıt başarıyla eklendi.");
+      entry.ozellikler = entry.ozellikler?.split(",").map(x => x.trim()).filter(x => x.length);
+      data.push(entry);
+      e.target.reset();
+      alert("Veri eklendi!");
+      renderList();
+      document.getElementById("tabList").click();
     });
 
-    // Başlangıç
-    loadDummyData();
-    renderEditList();
+    function loadData() {
+      fetch(jsonUrl)
+        .then(res => res.json())
+        .then(res => {
+          const content = atob(res.content);
+          data = JSON.parse(content);
+          renderList();
+        })
+        .catch(err => {
+          console.error("Veri çekilemedi:", err);
+        });
+    }
+
+    loadData();
   </script>
 </body>
 </html>
