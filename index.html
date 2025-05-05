@@ -51,7 +51,7 @@
 
   <!-- Üst Arama + Filtre -->
   <div class="sticky top-0 bg-white z-10 shadow p-4 space-y-3">
-    <input id="searchInput" type="text" placeholder="Ara..." class="border p-2 rounded w-full" />
+    <input id="searchInput" type="text" placeholder="Açıklamada ara..." class="border p-2 rounded w-full" />
 
     <div class="flex flex-wrap gap-2">
       <!-- SATILIK/KİRALIK -->
@@ -112,8 +112,9 @@
       const terms = query.split(" ").filter(Boolean);
 
       const filtered = data.filter(item => {
-        const haystack = normalize(Object.values(item).join(" "));
-        const searchMatch = terms.every(term => haystack.includes(term));
+        // Sadece açıklama alanında arama yap
+        const haystack = item.aciklama ? normalize(item.aciklama) : "";
+        const searchMatch = terms.length === 0 || terms.every(term => haystack.includes(term));
 
         const groupMatch = Object.keys(filters).every(group => {
           return !filters[group] || filters[group].length === 0 || filters[group].includes(item[group]);
