@@ -54,20 +54,13 @@
     <input id="searchInput" type="text" placeholder="Açıklamada ara..." class="border p-2 rounded w-full" />
 
     <div class="flex flex-wrap gap-2">
-      <!-- SATILIK/KİRALIK -->
-      <button class="filter-btn group-satkir" data-group="satkir" data-value="SATILIK">SATILIK</button>
-      <button class="filter-btn group-satkir" data-group="satkir" data-value="KİRALIK">KİRALIK</button>
-
-      <!-- Tip -->
-      <button class="filter-btn group-tip" data-group="tip" data-value="DAİRE">DAİRE</button>
-      <button class="filter-btn group-tip" data-group="tip" data-value="DÜKKAN">DÜKKAN</button>
-      <button class="filter-btn group-tip" data-group="tip" data-value="ARSA">ARSA</button>
-      <button class="filter-btn group-tip" data-group="tip" data-value="ARABA">ARABA</button>
-
-      <!-- İlçe -->
-      <button class="filter-btn group-ilce" data-group="ilce" data-value="AKÇALAR">AKÇALAR</button>
-      <button class="filter-btn group-ilce" data-group="ilce" data-value="NİLÜFER">NİLÜFER</button>
-      <button class="filter-btn group-ilce" data-group="ilce" data-value="BURSA">BURSA</button>
+      <!-- Popüler Arama Terimleri -->
+      <button class="filter-btn group-satkir" data-search="merkezi">MERKEZİ</button>
+      <button class="filter-btn group-satkir" data-search="deniz">DENİZ</button>
+      <button class="filter-btn group-tip" data-search="bahçe">BAHÇE</button>
+      <button class="filter-btn group-tip" data-search="manzara">MANZARA</button>
+      <button class="filter-btn group-ilce" data-search="kredi">KREDİ</button>
+      <button class="filter-btn group-ilce" data-search="taksi">TAKSİ</button>
     </div>
 
     <div id="resultCount" class="text-sm text-center text-gray-600 mt-1"></div>
@@ -78,7 +71,7 @@
 
   <script>
     const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
-    const filters = {};
+    let currentSearchTerm = "";
 
     function base64ToUtf8(base64) {
       const binaryString = atob(base64);
@@ -90,6 +83,7 @@
     }
 
     function normalize(str) {
+      if (!str) return "";
       return str
         .toLowerCase()
         .normalize("NFD")
@@ -108,19 +102,12 @@
 
     function renderList(data) {
       const container = document.getElementById("listContainer");
-      const query = normalize(document.getElementById("searchInput").value);
-      const terms = query.split(" ").filter(Boolean);
+      const searchTerm = normalize(currentSearchTerm);
+      const terms = searchTerm.split(" ").filter(Boolean);
 
       const filtered = data.filter(item => {
-        // Sadece açıklama alanında arama yap
-        const haystack = item.aciklama ? normalize(item.aciklama) : "";
-        const searchMatch = terms.length === 0 || terms.every(term => haystack.includes(term));
-
-        const groupMatch = Object.keys(filters).every(group => {
-          return !filters[group] || filters[group].length === 0 || filters[group].includes(item[group]);
-        });
-
-        return searchMatch && groupMatch;
+        const aciklama = normalize(item.aciklama || "");
+        return terms.length === 0 || terms.every(term => aciklama.includes(term));
       });
 
       container.innerHTML = "";
@@ -162,26 +149,24 @@
     }
 
     // Arama
-    document.getElementById("searchInput").addEventListener("input", () => {
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      currentSearchTerm = e.target.value;
       if (window.rawData) {
         renderList(window.rawData);
       }
     });
 
-    // Butonlar (Filtreleme)
-    document.querySelectorAll(".filter-btn").forEach(btn => {
+    // Butonlar (Arama Terimleri)
+    document.querySelectorAll("[data-search]").forEach(btn => {
       btn.addEventListener("click", () => {
-        const group = btn.dataset.group;
-        const value = btn.dataset.value;
-        filters[group] = filters[group] || [];
-
-        if (filters[group].includes(value)) {
-          filters[group] = filters[group].filter(v => v !== value);
-          btn.classList.remove("active");
-        } else {
-          filters[group].push(value);
-          btn.classList.add("active");
-        }
+        currentSearchTerm = btn.dataset.search;
+        document.getElementById("searchInput").value = currentSearchTerm;
+        
+        // Tüm butonlardan active classını kaldır
+        document.querySelectorAll("[data-search]").forEach(b => b.classList.remove("active"));
+        // Sadece tıklanana active classını ekle
+        btn.classList.add("active");
+        
         if (window.rawData) {
           renderList(window.rawData);
         }
@@ -192,6 +177,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       const q = urlParams.get("arama");
       if (q) {
+        currentSearchTerm = q;
         document.getElementById("searchInput").value = q;
         if (window.rawData) {
           renderList(window.rawData);
