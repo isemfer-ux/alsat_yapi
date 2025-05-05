@@ -80,6 +80,15 @@
     const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
     const filters = {};
 
+    function base64ToUtf8(base64) {
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+
     function normalize(str) {
       return str
         .toLowerCase()
@@ -194,7 +203,7 @@
       .then(res => res.json())
       .then(data => {
         try {
-          const jsonString = atob(data.content);
+          const jsonString = base64ToUtf8(data.content);
           const json = JSON.parse(jsonString);
           window.rawData = json;
           initFromURL();
