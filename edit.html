@@ -5,59 +5,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Veri Düzenleme</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .tab-button {
+      background-color: #f1f1f1;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background-color: #ddd;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body class="bg-gray-50 p-4">
   <div class="max-w-6xl mx-auto">
     <h1 class="text-2xl font-bold mb-6">Veri Düzenleme Paneli</h1>
     
-    <!-- Yeni Kayıt Ekleme Formu -->
-    <div class="bg-white p-4 rounded shadow mb-6">
-      <h2 class="text-xl font-semibold mb-4">Yeni Kayıt Ekle</h2>
-      <form id="addForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Satılık/Kiralık</label>
-          <select name="satkir" class="w-full p-2 border rounded">
-            <option value="SATILIK">SATILIK</option>
-            <option value="KİRALIK">KİRALIK</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Tip</label>
-          <select name="tip" class="w-full p-2 border rounded">
-            <option value="DAİRE">DAİRE</option>
-            <option value="DÜKKAN">DÜKKAN</option>
-            <option value="ARSA">ARSA</option>
-            <option value="ARABA">ARABA</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">İlçe</label>
-          <input type="text" name="ilce" class="w-full p-2 border rounded" required>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Net m²</label>
-          <input type="number" name="m2net" class="w-full p-2 border rounded" required>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Fiyat (₺)</label>
-          <input type="number" name="sfiyat" class="w-full p-2 border rounded" required>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Açıklama</label>
-          <textarea name="aciklama" class="w-full p-2 border rounded" rows="2"></textarea>
-        </div>
-        <div class="md:col-span-2">
-          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Kayıt Ekle
-          </button>
-        </div>
-      </form>
+    <!-- Sekmeler -->
+    <div class="flex border-b mb-4">
+      <button class="tab-button active" data-tab="tab1">Kayıt Listesi</button>
+      <button class="tab-button" data-tab="tab2">Yeni Kayıt Ekle</button>
     </div>
 
-    <!-- Mevcut Kayıtlar Listesi -->
-    <div class="bg-white p-4 rounded shadow">
-      <h2 class="text-xl font-semibold mb-4">Mevcut Kayıtlar</h2>
-      <div id="recordsContainer" class="space-y-4"></div>
+    <!-- Sekme 1: Kayıt Listesi -->
+    <div id="tab1" class="tab-content active">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Mevcut Kayıtlar</h2>
+        <div id="recordsContainer" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- Sekme 2: Yeni Kayıt Ekleme -->
+    <div id="tab2" class="tab-content">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Yeni Kayıt Ekle</h2>
+        <form id="addForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">ID</label>
+            <input type="text" name="id" class="w-full p-2 border rounded" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Satılık/Kiralık</label>
+            <select name="satkir" class="w-full p-2 border rounded" required>
+              <option value="SATILIK">SATILIK</option>
+              <option value="KİRALIK">KİRALIK</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Tip</label>
+            <select name="tip" class="w-full p-2 border rounded" required>
+              <option value="DAİRE">DAİRE</option>
+              <option value="DÜKKAN">DÜKKAN</option>
+              <option value="ARSA">ARSA</option>
+              <option value="ARABA">ARABA</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">İl</label>
+            <input type="text" name="il" class="w-full p-2 border rounded" value="BURSA" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">İlçe</label>
+            <input type="text" name="ilce" class="w-full p-2 border rounded" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Mahalle</label>
+            <input type="text" name="mahalle" class="w-full p-2 border rounded" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Ada/Parsel</label>
+            <input type="text" name="ada_parsel" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Blok</label>
+            <input type="text" name="blok" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Kat</label>
+            <input type="text" name="kat" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Daire No</label>
+            <input type="text" name="daire" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Net m²</label>
+            <input type="number" name="m2net" class="w-full p-2 border rounded" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Brüt m²</label>
+            <input type="number" name="m2brut" class="w-full p-2 border rounded" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Satış Fiyatı (₺)</label>
+            <input type="number" name="sfiyat" class="w-full p-2 border rounded" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Kira Fiyatı (₺)</label>
+            <input type="number" name="kfiyat" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Sahibi</label>
+            <input type="text" name="sahibi" class="w-full p-2 border rounded" value="ALSAT YAPI">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">Özellikler (virgülle ayırın)</label>
+            <input type="text" name="ozellikler" class="w-full p-2 border rounded" placeholder="3+1, asansör, otopark">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">Açıklama</label>
+            <textarea name="aciklama" class="w-full p-2 border rounded" rows="3" required></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Durum</label>
+            <input type="text" name="durum" class="w-full p-2 border rounded">
+          </div>
+          <div class="md:col-span-2">
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              Kayıt Ekle
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -67,10 +143,21 @@
     let fileSha = '';
 
     // GitHub API için gerekli bilgiler
-    const githubToken = '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'; // GitHub personal access token buraya
+    const githubToken = ''; // GitHub personal access token buraya
     const repoOwner = 'isemfer-ux';
     const repoName = 'alsat_yapi';
     const filePath = 'satis_listesi.json';
+
+    // Sekme değiştirme
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        button.classList.add('active');
+        document.getElementById(button.dataset.tab).classList.add('active');
+      });
+    });
 
     // Verileri çek
     async function fetchData() {
@@ -84,7 +171,7 @@
         renderRecords();
       } catch (error) {
         console.error('Veri çekme hatası:', error);
-        alert('Veriler yüklenirken bir hata oluştu');
+        alert('Veriler yüklenirken bir hata oluştu: ' + error.message);
       }
     }
 
@@ -93,12 +180,20 @@
       const container = document.getElementById('recordsContainer');
       container.innerHTML = '';
 
+      if (currentData.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">Kayıt bulunamadı.</p>';
+        return;
+      }
+
       currentData.forEach((item, index) => {
         const record = document.createElement('div');
         record.className = 'border p-4 rounded';
         record.innerHTML = `
           <div class="flex justify-between items-start mb-2">
-            <h3 class="font-medium">${item.satkir} ${item.tip} - ${item.ilce} - ${item.m2net}m² - ${item.sfiyat}₺</h3>
+            <div>
+              <h3 class="font-medium">${item.id} - ${item.satkir} ${item.tip}</h3>
+              <p class="text-sm">${item.ilce}, ${item.mahalle} - ${item.m2net}m² - ${item.sfiyat}₺</p>
+            </div>
             <div class="flex gap-2">
               <button data-index="${index}" class="edit-btn bg-yellow-500 text-white px-3 py-1 rounded text-sm">
                 Düzenle
@@ -109,6 +204,9 @@
             </div>
           </div>
           <p class="text-sm text-gray-600">${item.aciklama || 'Açıklama yok'}</p>
+          <div class="mt-2 flex flex-wrap gap-1">
+            ${item.ozellikler?.map(oz => `<span class="text-xs bg-gray-100 px-2 py-1 rounded">${oz}</span>`).join('') || ''}
+          </div>
         `;
         container.appendChild(record);
       });
@@ -135,16 +233,74 @@
     // Kayıt düzenle
     function editRecord(index) {
       const item = currentData[index];
-      const newData = {};
+      const form = document.createElement('form');
+      form.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded';
       
-      // Basit bir düzenleme formu
+      // Form alanlarını oluştur
       for (const key in item) {
-        newData[key] = prompt(`${key}:`, item[key]);
-        if (newData[key] === null) return; // İptal edildiyse
+        if (key === 'ozellikler') {
+          form.innerHTML += `
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium mb-1">Özellikler (virgülle ayırın)</label>
+              <input type="text" name="${key}" value="${Array.isArray(item[key]) ? item[key].join(', ') : ''}" class="w-full p-2 border rounded">
+            </div>
+          `;
+        } else if (key === 'aciklama') {
+          form.innerHTML += `
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium mb-1">Açıklama</label>
+              <textarea name="${key}" class="w-full p-2 border rounded" rows="3">${item[key] || ''}</textarea>
+            </div>
+          `;
+        } else {
+          form.innerHTML += `
+            <div>
+              <label class="block text-sm font-medium mb-1">${key}</label>
+              <input type="text" name="${key}" value="${item[key] || ''}" class="w-full p-2 border rounded">
+            </div>
+          `;
+        }
       }
       
-      currentData[index] = newData;
-      updateFile();
+      // Kaydet ve İptal butonları
+      form.innerHTML += `
+        <div class="md:col-span-2 flex gap-2">
+          <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+            Kaydet
+          </button>
+          <button type="button" class="cancel-edit bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            İptal
+          </button>
+        </div>
+      `;
+      
+      // Mevcut kaydı formla değiştir
+      const recordElement = document.querySelector(`[data-index="${index}"]`).closest('.border');
+      recordElement.innerHTML = '';
+      recordElement.appendChild(form);
+      
+      // Form submit işlemi
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const updatedItem = {};
+        
+        formData.forEach((value, key) => {
+          if (key === 'ozellikler') {
+            updatedItem[key] = value.split(',').map(item => item.trim());
+          } else {
+            updatedItem[key] = value;
+          }
+        });
+        
+        currentData[index] = updatedItem;
+        updateFile();
+      });
+      
+      // İptal butonu
+      form.querySelector('.cancel-edit').addEventListener('click', () => {
+        renderRecords();
+      });
     }
 
     // Kayıt sil
@@ -161,12 +317,29 @@
       const newRecord = {};
       
       formData.forEach((value, key) => {
-        newRecord[key] = value;
+        if (key === 'ozellikler') {
+          newRecord[key] = value.split(',').map(item => item.trim());
+        } else {
+          newRecord[key] = value;
+        }
       });
+      
+      // ID kontrolü
+      if (!newRecord.id || newRecord.id.trim() === '') {
+        alert('ID alanı boş olamaz!');
+        return;
+      }
+      
+      // ID benzersiz mi kontrol et
+      if (currentData.some(item => item.id === newRecord.id)) {
+        alert('Bu ID zaten kullanılıyor!');
+        return;
+      }
       
       currentData.push(newRecord);
       updateFile();
       e.target.reset();
+      document.querySelector('.tab-button[data-tab="tab1"]').click();
     });
 
     // GitHub'a dosyayı güncelle
@@ -196,14 +369,16 @@
         if (response.ok) {
           const data = await response.json();
           fileSha = data.content.sha;
-          alert('Veriler başarıyla güncellendi!');
           renderRecords();
         } else {
-          throw new Error('Güncelleme başarısız');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Güncelleme başarısız');
         }
       } catch (error) {
         console.error('Güncelleme hatası:', error);
-        alert('Güncelleme sırasında bir hata oluştu');
+        alert('Güncelleme sırasında bir hata oluştu: ' + error.message);
+        // Verileri tekrar çekerek sync sorununu önle
+        fetchData();
       }
     }
 
