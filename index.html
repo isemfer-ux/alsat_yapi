@@ -79,15 +79,16 @@
   <!-- Liste -->
   <div id="listContainer" class="p-4 space-y-4"></div>
 
-  <script>
+<script>
   const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
   const filters = {};
 
+  // Türkçe karakterleri normalize etmek için güçlü fonksiyon
   function normalize(str) {
     return str
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("tr-TR") // Türkçe küçük harfe çevir
+      .normalize("NFKD")          // Unicode parçalama
+      .replace(/[\u0300-\u036f]/g, "") // Diyakritikleri temizle
       .replace(/ç/g, "c")
       .replace(/ğ/g, "g")
       .replace(/ı/g, "i")
@@ -107,10 +108,12 @@
 
     const filtered = data.filter(item => {
       const haystack = normalize(Object.values(item).join(" "));
+
       const searchMatch = terms.every(term => haystack.includes(term));
 
       const groupMatch = Object.keys(filters).every(group => {
-        return !filters[group] || filters[group].length === 0 || filters[group].includes(item[group]);
+        const value = item[group] || "";
+        return !filters[group] || filters[group].length === 0 || filters[group].some(f => normalize(f) === normalize(value));
       });
 
       return searchMatch && groupMatch;
@@ -154,14 +157,10 @@
     document.getElementById("resultCount").textContent = `${filtered.length} ürün bulundu`;
   }
 
-  // Arama
   document.getElementById("searchInput").addEventListener("input", () => {
-    if (window.rawData) { // rawData'nın yüklendiğinden emin ol
-      renderList(window.rawData);
-    }
+    if (window.rawData) renderList(window.rawData);
   });
 
-  // Butonlar (Filtreleme)
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const group = btn.dataset.group;
@@ -175,9 +174,8 @@
         filters[group].push(value);
         btn.classList.add("active");
       }
-      if (window.rawData) { // rawData'nın yüklendiğinden emin ol
-        renderList(window.rawData);
-      }
+
+      if (window.rawData) renderList(window.rawData);
     });
   });
 
@@ -186,19 +184,20 @@
     const q = urlParams.get("arama");
     if (q) {
       document.getElementById("searchInput").value = q;
-      if (window.rawData) { // rawData yüklendiyse aramayı başlat
-        renderList(window.rawData);
-      }
+      if (window.rawData) renderList(window.rawData);
     }
   }
 
-  // Başlat
   fetch(apiUrl)
     .then(res => res.json())
     .then(data => {
       try {
-        const jsonString = atob(data.content);
+        const binary = atob(data.content);
+        const utf8decoder = new TextDecoder("utf-8");
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        const jsonString = utf8decoder.decode(bytes);
         const json = JSON.parse(jsonString);
+
         window.rawData = json;
         initFromURL();
         renderList(json);
@@ -211,6 +210,7 @@
       console.error("Veri çekme hatası:", error);
       document.getElementById("listContainer").innerHTML = "<div class='text-red-500'>Veri yüklenirken bir hata oluştu.</div>";
     });
- </script>
+</script>
+
 </body>
 </html>
