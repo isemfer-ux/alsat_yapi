@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -5,64 +6,108 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Satış Listesi</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .filter-btn {
+      background-color: rgba(0, 123, 255, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .group-satkir {
+      background-color: rgba(56,189,248,0.1);
+      color: #0284c7;
+      border-color: #7dd3fc;
+    }
+    .group-satkir.active {
+      background-color: #0284c7;
+      color: white;
+    }
+    .group-tip {
+      background-color: rgba(253,224,71,0.2);
+      color: #b45309;
+      border-color: #fde68a;
+    }
+    .group-tip.active {
+      background-color: #b45309;
+      color: white;
+    }
+    .group-ilce {
+      background-color: rgba(134,239,172,0.2);
+      color: #15803d;
+      border-color: #bbf7d0;
+    }
+    .group-ilce.active {
+      background-color: #15803d;
+      color: white;
+    }
+  </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
   <div class="sticky top-0 bg-white z-10 shadow p-4 space-y-3">
     <input id="searchInput" type="text" placeholder="Ara..." class="border p-2 rounded w-full" />
+    <div class="flex flex-wrap gap-2">
+      <button class="filter-btn group-satkir" data-group="satkir" data-value="SATILIK">SATILIK</button>
+      <button class="filter-btn group-satkir" data-group="satkir" data-value="KİRALIK">KİRALIK</button>
+      <button class="filter-btn group-tip" data-group="tip" data-value="DAİRE">DAİRE</button>
+      <button class="filter-btn group-tip" data-group="tip" data-value="DÜKKAN">DÜKKAN</button>
+      <button class="filter-btn group-tip" data-group="tip" data-value="ARSA">ARSA</button>
+      <button class="filter-btn group-tip" data-group="tip" data-value="ARABA">ARABA</button>
+      <button class="filter-btn group-ilce" data-group="ilce" data-value="AKÇALAR">AKÇALAR</button>
+      <button class="filter-btn group-ilce" data-group="ilce" data-value="NİLÜFER">NİLÜFER</button>
+      <button class="filter-btn group-ilce" data-group="ilce" data-value="BURSA">BURSA</button>
+    </div>
     <div id="resultCount" class="text-sm text-center text-gray-600 mt-1"></div>
   </div>
-
   <div id="listContainer" class="p-4 space-y-4"></div>
-
   <script>
     const apiUrl = "https://api.github.com/repos/isemfer-ux/alsat_yapi/contents/satis_listesi.json";
-
+    const filters = {};
     function normalize(str) {
-      return str
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/ç/g, "c").replace(/ğ/g, "g")
-        .replace(/ı/g, "i").replace(/ö/g, "o")
-        .replace(/ş/g, "s").replace(/ü/g, "u");
+      return str.toLowerCase().normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ı/g, "i")
+        .replace(/ö/g, "o").replace(/ş/g, "s").replace(/ü/g, "u");
     }
-
     function formatNumber(n) {
       return parseInt(n).toLocaleString("tr-TR");
     }
-
     function renderList(data) {
       const container = document.getElementById("listContainer");
       const query = normalize(document.getElementById("searchInput").value);
       const terms = query.split(" ").filter(Boolean);
-
       const filtered = data.filter(item => {
-        const aciklama = normalize(item.aciklama || "");
-        return terms.every(term => aciklama.includes(term));
+        const haystack = normalize(item.aciklama || "");
+        const searchMatch = terms.every(term => haystack.includes(term));
+        const groupMatch = Object.keys(filters).every(group => {
+          return !filters[group] || filters[group].length === 0 || filters[group].includes(item[group]);
+        });
+        return searchMatch && groupMatch;
       });
-
       container.innerHTML = "";
-
       filtered.forEach(item => {
         const box = document.createElement("div");
         box.className = "bg-white rounded shadow p-4 space-y-2";
-
-        const title = `${item.satkir} ${item.tip} - ${item.ilce} - ${item.m2net} m²`;
-        const fiyat = `${formatNumber(item.sfiyat)} ₺`;
-
-        box.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div class="font-bold">${title}</div>
-            <div class="text-green-600 font-semibold">${fiyat}</div>
-          </div>
-          <button class="text-blue-500 underline text-sm toggle-details">Detay Göster</button>
-          <div class="details hidden text-sm mt-2 space-y-1">
-            <div><strong>Açıklama:</strong> ${item.aciklama}</div>
-          </div>
-        `;
+        const title = \`\${item.satkir} \${item.tip} - \${item.ilce} - \${item.m2net} m²\`;
+        const fiyat = \`\${formatNumber(item.sfiyat)} ₺\`;
+        box.innerHTML =
+          \`<div class="flex justify-between items-center">
+              <div class="font-bold">\${title}</div>
+              <div class="text-green-600 font-semibold">\${fiyat}</div>
+            </div>
+            <button class="text-blue-500 underline text-sm toggle-details">Detay Göster</button>
+            <div class="details hidden text-sm mt-2 space-y-1">
+              <div><strong>Açıklama:</strong> \${item.aciklama || ""}</div>
+              \${item.ozellikler?.length ? \`<div><strong>Özellikler:</strong> \${item.ozellikler.join(", ")}</div>\` : ""}
+              \${item.mahalle ? \`<div><strong>Adres:</strong> \${item.il}, \${item.ilce}, \${item.mahalle}</div>\` : ""}
+              \${item.kat ? \`<div><strong>Kat:</strong> \${item.kat} - Daire No: \${item.daire}</div>\` : ""}
+              <div><strong>Net/Brüt:</strong> \${item.m2net} / \${item.m2brut} m²</div>
+              <div><strong>Durum:</strong> \${item.durum}</div>
+            </div>\`;
         container.appendChild(box);
       });
-
       document.querySelectorAll(".toggle-details").forEach(btn => {
         btn.addEventListener("click", () => {
           const details = btn.nextElementSibling;
@@ -70,14 +115,26 @@
           btn.textContent = details.classList.contains("hidden") ? "Detay Göster" : "Detay Gizle";
         });
       });
-
-      document.getElementById("resultCount").textContent = `${filtered.length} ürün bulundu`;
+      document.getElementById("resultCount").textContent = \`\${filtered.length} ürün bulundu\`;
     }
-
     document.getElementById("searchInput").addEventListener("input", () => {
       if (window.rawData) renderList(window.rawData);
     });
-
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const group = btn.dataset.group;
+        const value = btn.dataset.value;
+        filters[group] = filters[group] || [];
+        if (filters[group].includes(value)) {
+          filters[group] = filters[group].filter(v => v !== value);
+          btn.classList.remove("active");
+        } else {
+          filters[group].push(value);
+          btn.classList.add("active");
+        }
+        if (window.rawData) renderList(window.rawData);
+      });
+    });
     fetch(apiUrl)
       .then(res => res.json())
       .then(data => {
@@ -87,10 +144,12 @@
           window.rawData = json;
           renderList(json);
         } catch (e) {
-          console.error("JSON ayrıştırma hatası:", e);
+          document.getElementById("listContainer").innerHTML = "<div class='text-red-500'>Veri yüklenirken hata oluştu.</div>";
         }
       })
-      .catch(error => console.error("Veri çekme hatası:", error));
+      .catch(() => {
+        document.getElementById("listContainer").innerHTML = "<div class='text-red-500'>Veri çekilemedi.</div>";
+      });
   </script>
 </body>
 </html>
